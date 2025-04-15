@@ -6,27 +6,25 @@
 
 
 ### **Table of Contents**
-1. [[#Introduction]]
+1. [Introduction](#introduction)
+   
+3. [Project Objectives](#project-objectives)
+   
+5. [Tech Stack](#tech-stack)
+   
+7. [System Architecture](#system-architecture)
+   
+9. [API Endpoints](#api-endpoints)
     
-2. [[#Project Objectives]]
+11. [CSV Upload Feature](#csv-upload-feature)
     
-3. [[#Tech Stack]]
+13. [Database Schema](#database-schema)
     
-4. [[#System Architecture]]
+15. [Project Setup](#project-setup)
     
-5. [[#API Endpoints]]
+17. [Git & Branching Workflow](#git--branching-workflow)
     
-6. [[#CSV Upload Feature]]
-    
-7. [[#Database Schema]]
-    
-8. [[#Project Setup]]
-    
-9. [[#Git & Branching Workflow]]
-    
-10. [[#Conclusion]]
-    
-
+19. [Conclusion](#conclusion)
 
 ---
 

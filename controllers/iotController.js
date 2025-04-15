@@ -98,11 +98,64 @@ const uploadCSV = (req, res) => {
     });
 };
 
+
+
+const getAllFlows = (req, res) => {
+  iotModel.getAllFlows((err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+};
+
+const getFlowById = (req, res) => {
+  const id = req.params.id;
+  iotModel.getFlowById(id, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(result);
+  });
+};
+
+const deleteFlowById = (req, res) => {
+  const id = req.params.id;
+  iotModel.deleteFlowById(id, (err, result) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json({ message: 'Flow deleted successfully' });
+  });
+};
+
+const getRecentFlows = (req, res) => {
+  iotModel.getRecentFlows((err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+};
+
+const getFlowStats = (req, res) => {
+  iotModel.getFlowStats((err, stats) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(stats);
+  });
+};
+
+const getDeviceFlows = (req, res) => {
+  const deviceId = req.params.deviceId;
+  iotModel.getDeviceFlows(deviceId, (err, results) => {
+    if (err) return res.status(500).json({ error: err.message });
+    res.json(results);
+  });
+};
+
 module.exports = {
   getAllData,
   getDataById,
   insertData,
   updateData,
   deleteData,
-  uploadCSV
+  uploadCSV,
+  getAllFlows,
+  getFlowById,
+  deleteFlowById,
+  getRecentFlows,
+  getFlowStats,
+  getDeviceFlows
 };

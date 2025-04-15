@@ -30,10 +30,45 @@ const deleteIotData = (id, callback) => {
   db.query(query, [id], callback);
 };
 
+const getAllFlows = (callback) => {
+  db.query('SELECT * FROM iot_flows', callback);
+};
+
+const getFlowById = (id, callback) => {
+  db.query('SELECT * FROM iot_flows WHERE id = ?', [id], callback);
+};
+
+const deleteFlowById = (id, callback) => {
+  db.query('DELETE FROM iot_flows WHERE id = ?', [id], callback);
+};
+
+const getRecentFlows = (callback) => {
+  db.query('SELECT * FROM iot_flows WHERE timestamp >= NOW() - INTERVAL 1 DAY', callback);
+};
+
+const getFlowStats = (callback) => {
+  const sql = `
+    SELECT 
+      COUNT(*) AS total,
+      AVG(packet_size_avg) AS avg_packet_size,
+      SUM(packet_size_sum) AS total_packet_sum
+    FROM iot_flows`;
+  db.query(sql, callback);
+};
+
+exports.getDeviceFlows = (deviceId, callback) => {
+  db.query('SELECT * FROM iot_flows WHERE device_id = ?', [deviceId], callback);
+};
+
 module.exports = {
   getAllIotData,
   getIotDataById,
   insertIotData,
   updateIotData,
-  deleteIotData
+  deleteIotData,
+  getAllFlows,
+  getFlowById,
+  deleteFlowById,
+  getRecentFlows,
+  getFlowStats
 };

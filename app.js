@@ -7,6 +7,7 @@ const userRoutes = require('./routes/userRoutes');
 const app = express();
 const errorHandler = require('./middleware/error')
 const fs = require('fs');
+const rateLimit = require('express-rate-limit');
 const https = require('https');
 
 dotenv.config(); // Load .env variables
@@ -22,6 +23,12 @@ app.use('/api/user', userRoutes);
 // Error Handling
 app.use(errorHandler);
 
+// rate limiting of 100 requests per 15 minutes)
+const limiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, //100 requests per window
+  message: 'Too many requests from this IP, please try again later.'
+});
 // SSL setup
 const sslOptions = {
   key: fs.readFileSync('./cert/server.key'),

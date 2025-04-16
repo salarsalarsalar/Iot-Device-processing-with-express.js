@@ -1,13 +1,16 @@
-const db = require('../db');
 
-const createUser = (username, hashedPassword, callback) => {
+const db = require('./db');
+
+const createUser = async (username, hashedPassword) => {
   const sql = 'INSERT INTO users (username, password) VALUES (?, ?)';
-  db.query(sql, [username, hashedPassword], callback);
+  const [result] = await db.query(sql, [username, hashedPassword]);
+  return result;
 };
 
-const findUserByUsername = (username, callback) => {
+const findUserByUsername = async (username) => {
   const sql = 'SELECT * FROM users WHERE username = ?';
-  db.query(sql, [username], callback);
+  const [rows] = await db.query(sql, [username]);
+  return rows[0]; // or rows if you want all
 };
 
 module.exports = { createUser, findUserByUsername };

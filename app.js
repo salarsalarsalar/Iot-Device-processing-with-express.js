@@ -2,14 +2,15 @@ const express = require('express');
 const dotenv = require('dotenv');
 const cors = require('cors');
 const bodyParser = require('body-parser');
-const iotRoutes = require('./routes/iotRoutes');
-const userRoutes = require('./routes/userRoutes'); 
-const app = express();
-const errorHandler = require('./middleware/error')
 const fs = require('fs');
 const rateLimit = require('express-rate-limit');
 const https = require('https');
 
+const iotRoutes = require('./routes/iotRoutes');
+const userRoutes = require('./routes/userRoutes'); 
+const errorHandler = require('./middleware/error')
+
+const app = express();
 dotenv.config(); // Load .env variables
 
 // Middleware

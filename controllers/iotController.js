@@ -1,67 +1,90 @@
-const iotModel = require('../models/iotModel');
 const path = require('path');
 const fs = require('fs');
 const csv = require('csv-parser');
+const { error } = require('console');
+const { runController, msg } = require('../utils/controllerHelper');
 const db = require('../models/db'); // For raw CSV insert fallback
+const iotModel = require('../models/iotModel');
 
-exports.getAllData = async (req, res) => {
-  try {
-    const data = await iotModel.getAllIotData();
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ message: 'Database error', error: err });
-  }
+
+// @desc    Get all IoT data
+// @route   GET /api/iot
+exports.getAllData = (req, res) => {
+  runController(res, iotModel.getAllIotData, {
+    errorMessage: msg.notGotten
+  });
+};
+// @desc    Get paginated IoT data
+// @route   GET /api/iot/paginated?limit=10&offset=0
+exports.getPaginatedData = (req, res) => {
+  const { limit = 10, offset = 0 } = req.query;
+  runController(res, iotModel.getPaginatedIotData, {
+    errorMessage: msg.notGotten
+  }, parseInt(limit), parseInt(offset));
 };
 
-exports.getPaginatedData = async (req, res) => {
-  try {
-    const { limit = 10, offset = 0 } = req.query;
-    const data = await iotModel.getPaginatedData(parseInt(limit), parseInt(offset));
-    res.status(200).json(data);
-  } catch (err) {
-    res.status(500).json({ message: 'Database error', error: err });
-  }
+// @desc    Get IoT data by ID
+// @route   GET /api/iot/:id
+exports.getDataById = (req, res) => {
+  runController(res, iotModel.getIotDataById, {
+    notFoundMessage: msg.notFound,
+    errorMessage: msg.notGotten
+  }, req.params.id);
 };
 
-exports.getDataById = async (req, res) => {
-  try {
-    const data = await iotModel.getIotDataById(req.params.id);
-    if (!data.length) return res.status(404).json({ message: 'Data not found' });
-    res.status(200).json(data[0]);
-  } catch (err) {
-    res.status(500).json({ message: 'Database error', error: err });
-  }
+// @desc    Insert new IoT data (single or manual entry)
+// @route   POST /api/iot
+exports.insertData = (req, res) => {
+  runController(res, iotModel.insertIotData, {
+    successStatus: 201,
+    successMessage: msg.inserted,
+    errorMessage: msg.notInserted,
+    checkNotFound: false // insertion won't be "not found"
+  }, req.body.data);
 };
 
-exports.insertData = async (req, res) => {
-  try {
-    const result = await iotModel.insertIotData(req.body.data);
-    res.status(201).json({ message: 'Data inserted successfully', result });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to insert data', error: err });
-  }
+// @desc    Update IoT data by ID
+// @route   PUT /api/iot/:id
+exports.updateData = (req, res) => {
+  const { id } = req.params;
+  const { packet_size_avg, packet_size_sum, timestamp } = req.body;
+  runController(res, iotModel.updateIotData, {
+    successMessage: msg.updated,
+    errorMessage: msg.notUpdated,
+    checkNotFound: false
+  }, id, packet_size_avg, packet_size_sum, timestamp);
 };
 
-exports.updateData = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { packet_size_avg, packet_size_sum, timestamp } = req.body;
-    const result = await iotModel.updateIotData(id, packet_size_avg, packet_size_sum, timestamp);
-    res.status(200).json({ message: 'Data updated successfully', result });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to update data', error: err });
-  }
+// @desc    Delete IoT data by ID
+// @route   DELETE /api/iot/:id
+exports.deleteData = (req, res) => {
+  runController(res, iotModel.deleteIotData, {
+    successMessage: msg.deleted,
+    errorMessage: msg.notDeleted,
+    checkNotFound: false
+  }, req.params.id);
 };
 
-exports.deleteData = async (req, res) => {
-  try {
-    const result = await iotModel.deleteIotData(req.params.id);
-    res.status(200).json({ message: 'Data deleted successfully', result });
-  } catch (err) {
-    res.status(500).json({ message: 'Failed to delete data', error: err });
-  }
+// @desc    Get IoT data from the last 24 hours
+// @route   GET /api/iot/recent
+exports.getRecent = (req,res) => {
+  runController(res, iotModel.getRecentIot,{
+    successMessage: msg.gotten,
+    errorMessage: msg.notFound
+  })
+}
+
+// @desc    Get statistics (count, avg, sum) from IoT flows
+// @route   GET /api/iot/stats
+exports.getIotStats = (req,res) => {
+  runController(res,iotModel.getIotStats,{
+    successMessage: msg.gotten,
+    errorMessage: msg.notFound,
+  })
 };
 
+// @desc    Upload CSV file and insert bulk IoT flow data
+// @route   POST /api/iot/upload
 exports.uploadCSV = async (req, res) => {
   if (!req.file) return res.status(400).send('No file uploaded.');
 
@@ -89,58 +112,4 @@ exports.uploadCSV = async (req, res) => {
         res.status(500).send('Database insertion error.');
       }
     });
-};
-
-exports.getAllFlows = async (req, res) => {
-  try {
-    const data = await iotModel.getAllIotData();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getFlowById = async (req, res) => {
-  try {
-    const data = await iotModel.getFlowById(req.params.id);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.deleteFlowById = async (req, res) => {
-  try {
-    await iotModel.deleteFlowById(req.params.id);
-    res.json({ message: 'Flow deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getRecentFlows = async (req, res) => {
-  try {
-    const data = await iotModel.getRecentFlows();
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getFlowStats = async (req, res) => {
-  try {
-    const stats = await iotModel.getFlowStats();
-    res.json(stats);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-exports.getDeviceFlows = async (req, res) => {
-  try {
-    const data = await iotModel.getDeviceFlows(req.params.deviceId);
-    res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
 };

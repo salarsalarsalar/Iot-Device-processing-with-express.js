@@ -11,7 +11,7 @@ const {cache} = require('../middleware/cache');
 */
 
 // Get all data
-router.get('/', iotController.getAllData);
+router.get('/',cache, iotController.getAllData);
 
 // Get/Retrieve data by ID
 router.get('/:id', cache, iotController.getDataById);
@@ -31,10 +31,10 @@ router.delete('/:id', iotController.deleteByID);
 */
 
 // Get flows from the last 24 hours
-router.get('/recent', iotController.getRecentDevice);
+router.get('/recent',cache, iotController.getRecentDevice);
 
 // Get aggregated statistics (count, average, sum) of flow data
-router.get('/stats', iotController.getDeviceStats);
+router.get('/stats',cache, iotController.getDeviceStats);
 
 
 // Upload CSV

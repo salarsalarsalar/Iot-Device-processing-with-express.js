@@ -1,0 +1,7 @@
+node_modules/
+.env
+cert/
+server.cert
+server.key
+localhost-key.pem
+localhost.pem

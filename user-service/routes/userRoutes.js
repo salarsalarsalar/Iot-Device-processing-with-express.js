@@ -17,12 +17,12 @@ router.post('/register', userController.register);
 router.post('/login', userController.login);
 
 //@route: /api/user/roles/create
-//@desc: Create user roles (protected)
-router.post('/roles/create', verifyToken, userController.createRole);
+//@desc: Create user roles
+router.post('/roles/create', userController.createRole);
 
 //@route: /api/user/roles/assign
-//@desc: Assign user roles (protected)
-router.post('/roles/assign', verifyToken, userController.assignRole);
+//@desc: Assign user roles
+router.post('/roles/assign', userController.assignRole);
 
 //@route: /api/user/roles
 //@desc: Get all user roles(protected)

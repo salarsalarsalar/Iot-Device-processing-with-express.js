@@ -1,8 +1,11 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand shared variables
 
 const sequelize = new Sequelize(
-    process.env.DB_NAME ,
+    process.env.USER_DB_NAME ,
     process.env.DB_USER ,
     process.env.DB_PASSWORD,
     {

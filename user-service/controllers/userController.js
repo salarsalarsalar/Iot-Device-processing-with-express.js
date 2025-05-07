@@ -1,195 +1,275 @@
-// controllers/userController.js
 const { hashPassword, comparePasswords } = require('../utils/bcryptHelper');
 const { generateToken, generateRefreshToken } = require('../utils/jwtHelper');
-const {getOrSetCache} = require("../utils/bcryptHelper")
-const userModel = require('../models/userModel');
+const { getOrSetCache } = require('../utils/cacheHelper');
 const { sendResponse, sendError } = require('../utils/responseHelper');
+const { User, Role, User_Role } = require('../models');
+const bcrypt = require('bcrypt');
+const { Sequelize } = require('sequelize');
 
-
- // @route: POST /api/user/register
- // @desc: Register a new user
- 
- exports.register = async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    console.log('Received request to register:', username);
-
-    if (!username || !password) {
-      return sendError(res, 400, 'Username and password are required.');
-    }
-
-    console.log('Checking if user already exists...');
-    const existingUsers = await userModel.findByUsername(username);
-    console.log('Checking for username:', username);
-
-    if (existingUsers.length > 0) {
-      return sendError(res, 400, 'User already exists.');
-    }
-
-    const hashedPassword = await hashPassword(password);
-    const newUser = await userModel.createUser(username, hashedPassword);
-
-    sendResponse(res, 201, {
-      message: 'User registered successfully.',
-      user: newUser,
+// Welcome message
+const welcome = (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: 'Welcome to User Service'
     });
-  } catch (err) {
-    console.error('Error during registration:', err);
-    sendError(res, 500, 'An error occurred while registering the user.');
-  }
 };
 
- 
+// Register a new user
+const register = async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+        console.log('Received request to register:', username);
 
+        if (!username || !email || !password) {
+            return sendError(res, 400, 'Username, email and password are required.');
+        }
 
-// @route: POST /api/user/login
-// @desc: Log in a user and return a JWT
-exports.login = async (req, res) => {
-  try {
-    const { username, password } = req.body;
+        console.log('Checking if user already exists...');
+        const existingUser = await User.findOne({
+            where: {
+                [Sequelize.Op.or]: [
+                    { username: username },
+                    { email: email }
+                ]
+            }
+        });
 
-    const users = await userModel.findByUsername(username);
+        if (existingUser) {
+            return sendError(res, 400, 'User with this username or email already exists.');
+        }
 
-    
-    if (users.length === 0) {
-      return sendError(res, 401, 'Invalid username or password.');
+        const hashedPassword = await hashPassword(password);
+        const newUser = await User.create({
+            username,
+            email,
+            password: hashedPassword
+        });
+        
+        // Remove sensitive data before sending response
+        const userResponse = {
+            id: newUser.id,
+            username: newUser.username,
+            email: newUser.email,
+            createdAt: newUser.createdAt
+        };
+
+        sendResponse(res, 201, {
+            message: 'User registered successfully.',
+            user: userResponse
+        });
+    } catch (err) {
+        console.error('Error during registration:', err);
+        sendError(res, 500, 'An error occurred while registering the user.');
     }
-    
-    const user = users[0]; // Get the first user
+};
 
-    const isMatch = await comparePasswords(password, user.password);
-
-    if (!isMatch) {
-      return sendError(res, 401, 'Invalid username or password.');
+// Login user
+const login = async (req, res) => {
+    try {
+        const { email, password } = req.body;
+        
+        const user = await User.findOne({ where: { email } });
+        if (!user) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid credentials'
+            });
+        }
+        
+        const isPasswordValid = await bcrypt.compare(password, user.password);
+        if (!isPasswordValid) {
+            return res.status(401).json({
+                success: false,
+                error: 'Invalid credentials'
+            });
+        }
+        
+        const token = generateToken({ id: user.id, email: user.email });
+        const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
+        
+        // Store refresh token in cache
+        await getOrSetCache(`refresh_token:${user.id}`, refreshToken);
+        
+        res.status(200).json({
+            success: true,
+            data: {
+                token,
+                refreshToken,
+                user: {
+                    id: user.id,
+                    username: user.username,
+                    email: user.email
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Error during login:', err);
+        sendError(res, 500, 'An error occurred while logging in.');
     }
-
-    // Generating JWT Token
-    const token = generateToken({ id: user.id, username: user.username });
-    const refreshToken = generateRefreshToken({ id: user.id, username: user.username });
-
-    getOrSetCache("refresh_token", refreshToken);
-    sendResponse(res, 200, { message: 'Login successful.', token, refreshToken });
-  } catch (err) {
-    console.error('Error during login:', err);
-    sendError(res, 500, 'An error occurred during login.');
-  }
 };
 
-// @route: POST /api/user/token
-// @desc: get refresh token
-exports.token = async (req, res) => {
-  const refreshToken = req.params.token;
-
-  if (!refreshToken) {
-    return sendError(res, 401, "Token does not exist");
-  }
-
-  try {
-    // Fetching the refresh token from the cache (this returns a promise)
-    const cachedToken = await getOrSetCache("refresh_token", () => null);  // Pass null as a fallback to simulate cache miss
-
-    if (cachedToken === refreshToken) {
-      return sendResponse(res, 200, "Token is valid");
+// Get all users
+const getUsers = async (req, res) => {
+    try {
+        const users = await User.findAll({
+            attributes: ['id', 'username', 'email', 'createdAt'],
+            include: [{
+                model: Role,
+                through: { attributes: [] }
+            }]
+        });
+        sendResponse(res, 200, users);
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        sendError(res, 500, 'An error occurred while fetching users.');
     }
-
-    // If the token does not exist or is invalid
-    return sendError(res, 401, "Invalid or expired token");
-  } catch (err) {
-    console.error("Error checking refresh token:", err);
-    return sendError(res, 500, "Internal server error");
-  }
 };
 
-// @route: DELETE /api/user/logout
-// @desc: delete token
-exports.deleteToken = async (req, res) => {
-  const { token } = req.body;
+// Get a single user
+const getUser = async (req, res) => {
+    try {
+        const user = await User.findOne({
+            where: { id: req.params.id },
+            attributes: ['id', 'username', 'email', 'createdAt'],
+            include: [{
+                model: Role,
+                through: { attributes: [] }
+            }]
+        });
 
-  if (!token) {
-    return sendError(res, 400, "Token is required");
-  }
+        if (!user) {
+            return sendError(res, 404, 'User not found.');
+        }
 
-  try {
-    // Fetch current refresh tokens from cache
-    const refreshTokens = await getOrSetCache("refresh_tokens", () => []); // Default to an empty array if not in cache
-
-    // Remove the token from the list if it exists
-    const updatedTokens = refreshTokens.filter(existingToken => existingToken !== token);
-
-    // If the token is found and deleted, update the cache
-    if (refreshTokens.length !== updatedTokens.length) {
-      await redisClient.setEx("refresh_tokens", 3600, JSON.stringify(updatedTokens));  // Update cache with new tokens
-      return sendResponse(res, 204, "Token deleted successfully");
+        sendResponse(res, 200, user);
+    } catch (err) {
+        console.error('Error fetching user:', err);
+        sendError(res, 500, 'An error occurred while fetching the user.');
     }
-
-    // If the token doesn't exist
-    return sendError(res, 404, "Token not found");
-  } catch (err) {
-    console.error("Error deleting token:", err);
-    return sendError(res, 500, "Internal server error");
-  }
 };
 
+// Update a user
+const updateUser = async (req, res) => {
+    try {
+        const { username, email, password } = req.body;
+        const user = await User.findOne({ where: { id: req.params.id } });
 
-// @route: POST /api/user/roles/create
-// @desc: Create a new role
-exports.createRole = async (req, res) => {
-  const { name, description } = req.body;
-  if (!name) return res.status(400).json({ message: 'Role name is required' });
+        if (!user) {
+            return sendError(res, 404, 'User not found.');
+        }
 
-  try {
-    const roleId = await userModel.createRole(name, description);
-    res.status(201).json({ message: 'Role created', roleId });
-  } catch (err) {
-    console.error('Role creation error:', err);
-    res.status(500).json({ message: 'Server error while creating role' });
-  }
+        if (password) {
+            const hashedPassword = await hashPassword(password);
+            user.password = hashedPassword;
+        }
+
+        if (username) user.username = username;
+        if (email) user.email = email;
+
+        await user.save();
+
+        sendResponse(res, 200, {
+            message: 'User updated successfully.',
+            user: {
+                id: user.id,
+                username: user.username,
+                email: user.email
+            }
+        });
+    } catch (err) {
+        console.error('Error updating user:', err);
+        sendError(res, 500, 'An error occurred while updating the user.');
+    }
 };
 
-// @route: POST /api/roles/assign
-// @desc: Assign a role to a user
-exports.assignRole = (req, res) => {
-  const { user_id, role_id } = req.body;
-  if (!user_id || !role_id) return sendError(res, 400, 'User ID and Role ID are required.');
+// Delete a user
+const deleteUser = async (req, res) => {
+    try {
+        const user = await User.findOne({ where: { id: req.params.id } });
 
-  userModel.assignRoleToUser(user_id, role_id, (err, result) => {
-    if (err) return sendError(res, 500, err.message);
-    sendResponse(res, 200, { message: 'Role assigned to user' });
-  });
+        if (!user) {
+            return sendError(res, 404, 'User not found.');
+        }
+
+        await user.destroy();
+        sendResponse(res, 200, { message: 'User deleted successfully.' });
+    } catch (err) {
+        console.error('Error deleting user:', err);
+        sendError(res, 500, 'An error occurred while deleting the user.');
+    }
 };
 
-// @route: GET /api/users/:id/roles
-// @desc: Get all roles for a specific user
-exports.createRole = (req, res) => {
-  const { name, description } = req.body;
-  if (!name) return sendError(res, 400, 'Role name is required.');
-
-  userModel.createRole(name, description, (err, roleId) => {
-    if (err) return sendError(res, 500, err.message);
-    sendResponse(res, 201, { message: 'Role created', roleId });
-  });
+// Create a new role
+const createRole = async (req, res) => {
+    try {
+        const { name, description } = req.body;
+        const role = await Role.create({ name, description });
+        sendResponse(res, 201, role);
+    } catch (err) {
+        console.error('Error creating role:', err);
+        sendError(res, 500, 'An error occurred while creating the role.');
+    }
 };
 
-// @route: /api/user/
-// @desc: Get all users
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await getOrSetCache('all_users', () => promisifyModel(userModel.getAllUsers));
-    sendResponse(res, 200, users);
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    sendError(res, 500, 'Failed to fetch users.');
-  }
+// Assign a role to a user
+const assignRole = async (req, res) => {
+    try {
+        const { userId, roleId } = req.body;
+        await User_Role.create({ user_id: userId, role_id: roleId });
+        sendResponse(res, 201, { message: 'Role assigned successfully.' });
+    } catch (err) {
+        console.error('Error assigning role:', err);
+        sendError(res, 500, 'An error occurred while assigning the role.');
+    }
 };
 
-// @route: /api/user/roles
-// @desc: Get all users
-exports.getAllRoles = async (req, res) => {
-  try {
-    const users = await getOrSetCache('all_users', () => promisifyModel(userModel.getAllRoles));
-    sendResponse(res, 200, users);
-  } catch (err) {
-    console.error('Error fetching users:', err);
-    sendError(res, 500, 'Failed to fetch users.');
-  }
+// Get all roles
+const getAllRoles = async (req, res) => {
+    try {
+        const roles = await Role.findAll();
+        sendResponse(res, 200, roles);
+    } catch (err) {
+        console.error('Error fetching roles:', err);
+        sendError(res, 500, 'An error occurred while fetching roles.');
+    }
+};
+
+// Generate new token
+const token = async (req, res) => {
+    try {
+        const { refreshToken } = req.body;
+        const decoded = verifyRefreshToken(refreshToken);
+        const newToken = generateToken({ id: decoded.id, email: decoded.email });
+        sendResponse(res, 200, { token: newToken });
+    } catch (err) {
+        console.error('Error generating token:', err);
+        sendError(res, 401, 'Invalid refresh token.');
+    }
+};
+
+// Delete refresh token
+const deleteToken = async (req, res) => {
+    try {
+        const { userId } = req.body;
+        await redisClient.del(`refresh_token:${userId}`);
+        sendResponse(res, 200, { message: 'Token deleted successfully.' });
+    } catch (err) {
+        console.error('Error deleting token:', err);
+        sendError(res, 500, 'An error occurred while deleting the token.');
+    }
+};
+
+module.exports = {
+    welcome,
+    register,
+    login,
+    getUsers,
+    getUser,
+    updateUser,
+    deleteUser,
+    createRole,
+    assignRole,
+    getAllRoles,
+    token,
+    deleteToken
 };

@@ -1,8 +1,12 @@
 const { Sequelize } = require('sequelize');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand shared variables
+dotenv.config(); // Load .env variables
 
 const sequelize = new Sequelize(
-    process.env.DB_NAME,
+    process.env.IOT_DB_NAME,
     process.env.DB_USER,
     process.env.DB_PASSWORD,
     {
@@ -17,7 +21,6 @@ const sequelize = new Sequelize(
         }
     }
 );
-
 // Test the connection
 sequelize.authenticate()
     .then(() => {

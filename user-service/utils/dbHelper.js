@@ -8,5 +8,5 @@ const promisifyModel = (modelFunc, ...params) => {
     });
   };
   
-  module.exports = { promisifyModel };
+module.exports = { promisifyModel };
   

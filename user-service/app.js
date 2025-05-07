@@ -4,6 +4,7 @@ const cors = require('cors');
 const https = require("https");
 const redis = require('redis');
 const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
 const helmet = require('helmet');
 const express = require('express');
 const bodyParser = require('body-parser');
@@ -20,10 +21,14 @@ const { notFound } = require('./middleware/notFound');
 
 const app = express(); // initialising express.js
 
+
 // initialising environment variables
 dotenv.config(); // Load .env variables
-const PORT = process.env.USER_SERVICE_PORT;
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand the shared .env variables
 
+const PORT = process.env.USER_SERVICE_PORT;
+const USER_URL = process.env.USER_SERVICE_URL;
 // Middleware Functions
 app.use(bodyParser.json()); // Parse incoming JSON requests
 app.use(cors()); // allows cross origin resource sharing
@@ -32,7 +37,7 @@ app.use(limiter); // applies rate limiting
 app.use(helmet()); // protects against XSS and CSRF
 
 // Routes
-app.use('/api/user', userRoutes);
+app.use('/', userRoutes);
 
 // Handles undefined routes
 app.use(notFound);
@@ -47,7 +52,8 @@ const sslOptions = {
 };
 
 https.createServer(sslOptions, app).listen(PORT, () => {
-  console.log(`HTTPS Server running on https://localhost:${PORT}`);
+  console.log(`HTTPS Server running on ${USER_URL}`);
+  // console.log(`HTTPS Server running on https://localhost:${PORT}`);
 });
 // // Clustering logic
 // const numCPUs = os.cpus().length; // Number of CPU cores

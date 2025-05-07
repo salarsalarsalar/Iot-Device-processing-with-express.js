@@ -1,6 +1,8 @@
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
-
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand shared variables
 
 
 const ACCESS_TOKEN = process.env.ACCESS_TOKEN;

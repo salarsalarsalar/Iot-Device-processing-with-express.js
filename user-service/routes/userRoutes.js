@@ -3,8 +3,16 @@ const router = express.Router();
 const userController= require('../controllers/userController.js');
 const { verifyToken } = require('../middleware/verifyToken');
 
-//@route: /api/user/roles
-//@desc: Get all user roles
+
+
+//@route: /api/user/home
+//@desc: welcome message
+router.get('/home',userController.welcome);
+
+
+
+//@route: /api/user
+//@desc: Get all user
 router.get('/',userController.getAllUsers);
 
 

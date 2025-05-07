@@ -1,5 +1,10 @@
 const mysql = require('mysql2/promise');
-require('dotenv').config();
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
+dotenv.config(); // Load .env variables
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand shared variables
+
 
 const pool = mysql.createPool({
   host: process.env.DB_HOST,

@@ -1,8 +1,13 @@
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimiter = require('../middleware/rateLimiter');
-
+const dotenv = require('dotenv');
+const dotenvExpand = require('dotenv-expand');
 const router = express.Router();
+
+dotenv.config(); // Load .env variables
+const sharedEnv = dotenv.config({ path: '../.env' });
+dotenvExpand.expand(sharedEnv); // Expand shared variables
 
 router.use('/api/user', rateLimiter, createProxyMiddleware({
   target: process.env.USER_SERVICE_URL,

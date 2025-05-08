@@ -14,6 +14,7 @@ const os = require('os');
 
 // imports of files of project
 const { logger } = require('./middleware/logger');
+const CronLogger = require('./utils/cronLogger');
 const iotRoutes = require('./routes/iotRoutes');
 const { limiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/error');
@@ -53,6 +54,7 @@ const sslOptions = {
 
 https.createServer(sslOptions, app).listen(PORT, () => {
   console.log(`HTTPS Server running on ${IOT_URL}`);
+  CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
 });
 
 

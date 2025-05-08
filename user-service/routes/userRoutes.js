@@ -13,7 +13,7 @@ router.get('/home',userController.welcome);
 
 //@route: /api/user
 //@desc: Get all user
-router.get('/',userController.getAllUsers);
+router.get('/',userController.getUsers);
 
 
 //@route: /api/user/register

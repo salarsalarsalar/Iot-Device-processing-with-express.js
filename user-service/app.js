@@ -18,7 +18,7 @@ const { limiter } = require('./middleware/rateLimiter');
 const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
-
+const CronLogger  = require('./utils/cronLogger');
 const app = express(); // initialising express.js
 
 
@@ -53,6 +53,7 @@ const sslOptions = {
 
 https.createServer(sslOptions, app).listen(PORT, () => {
   console.log(`HTTPS Server running on ${USER_URL}`);
+  CronLogger('user-service', '*/5 * * * *'); // Log every 5 minutes
   // console.log(`HTTPS Server running on https://localhost:${PORT}`);
 });
 // // Clustering logic

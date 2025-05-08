@@ -10,6 +10,7 @@ const logService = require('./middleware/logService');
 const { logger } = require('./middleware/logger');
 const bodyParser = require('body-parser');
 const { notFound } = require('./middleware/notFound');
+const cronLogger = require('./utils/cronLogger');
 const helmet = require('helmet');
 const app = express();
 
@@ -49,4 +50,5 @@ const sslOptions = {
 // Start HTTPS server
 https.createServer(sslOptions, app).listen(GATEWAY_PORT, () => {
   console.log(`HTTPS API Gateway running at ${GATEWAY_URL}`);
+  cronLogger('api-gateway');
 });

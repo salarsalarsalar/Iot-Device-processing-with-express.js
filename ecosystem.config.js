@@ -27,17 +27,6 @@ module.exports = {
         env_staging: {NODE_ENV: 'staging'},
         env_production: {NODE_ENV: 'production'}, 
       },
-      {
-        name: 'api-gateway-cron',
-        script: './api-gateway/utils/cronLogger.js',
-        cwd: './api-gateway',
-        instances: 1,
-        autorestart: true,
-        watch: false,
-        env_development: { NODE_ENV: 'development' },
-        env_staging: { NODE_ENV: 'staging' },
-        env_production: { NODE_ENV: 'production' },
-      },
 
       {
         name: 'user-service',
@@ -51,18 +40,7 @@ module.exports = {
         env_staging: {NODE_ENV: 'staging'},
         env_production: {NODE_ENV: 'production'},
       },
-      {
-        name: 'user-service-cron',
-        script: './user-service/utils/cronLogger.js',
-        cwd: './user-service',
-        instances: 1,
-        autorestart: true,
-        watch: false,
-        env_development: { NODE_ENV: 'development' },
-        env_staging: { NODE_ENV: 'staging' },
-        env_production: { NODE_ENV: 'production' }
-        
-      },
+
       {
         name: 'iot-service',
         script: './iot-service/app.js',
@@ -76,9 +54,9 @@ module.exports = {
         env_production: {NODE_ENV: 'production'}
       },
       {
-        name: 'iot-service-cron',
-        script: './iot-service/utils/cronLogger.js',
-        cwd: './iot-service',
+        name: 'cron-job',
+        script: './cronJob.js',
+        cwd: './',
         instances: 1,
         autorestart: true,
         watch: false,

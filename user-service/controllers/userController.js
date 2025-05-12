@@ -17,39 +17,35 @@ const welcome = (req, res) => {
 // Register a new user
 const register = async (req, res) => {
     try {
-        console.log('>>> Entered register route');
-
-        console.log('>>> req.body:', req.body);
-
         const { username, email, password } = req.body;
+        console.log('Received request to register:', username);
 
         if (!username || !email || !password) {
-            console.log('>>> Missing fields');
             return sendError(res, 400, 'Username, email and password are required.');
         }
 
-        console.log('>>> Checking if user exists');
+        console.log('Checking if user already exists...');
         const existingUser = await User.findOne({
             where: {
-                [Sequelize.Op.or]: [{ username }, { email }]
+                [Sequelize.Op.or]: [
+                    { username: username },
+                    { email: email }
+                ]
             }
         });
 
         if (existingUser) {
-            console.log('>>> User exists');
             return sendError(res, 400, 'User with this username or email already exists.');
         }
 
-        console.log('>>> Hashing password');
         const hashedPassword = await hashPassword(password);
-
-        console.log('>>> Creating user');
         const newUser = await User.create({
             username,
             email,
             password: hashedPassword
         });
-
+        
+        // Remove sensitive data before sending response
         const userResponse = {
             id: newUser.id,
             username: newUser.username,
@@ -57,13 +53,22 @@ const register = async (req, res) => {
             createdAt: newUser.createdAt
         };
 
-        console.log('>>> Sending response');
         sendResponse(res, 201, {
             message: 'User registered successfully.',
             user: userResponse
         });
+
+        // Produce Kafka message after successful registration
+        try {
+            console.log('Producing Kafka message...');
+            await registerUser(req, res, newUser);
+            console.log('Kafka message sent successfully.');
+        } catch (kafkaErr) {
+            console.error('Failed to send Kafka message:', kafkaErr.message);
+            // Optional: log error details, retry, or store in fallback queue
+        }
     } catch (err) {
-        console.error('>>> Caught error in register:', err);
+        console.error('Error during registration:', err);
         sendError(res, 500, 'An error occurred while registering the user.');
     }
 };

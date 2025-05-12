@@ -1,3 +1,6 @@
+const fs = require('fs');
+const path = require('path');
+const csv = require('csv-parser');
 const sequelize = require('../config/database');
 const { Device, Time, IoT_Flow } = require('../models');
 
@@ -7,83 +10,56 @@ async function setupDatabase() {
         await sequelize.sync({ force: true });
         console.log('Database tables created successfully');
 
-        // Create sample devices
-        const devices = await Device.bulkCreate([
-            {
-                device_name: 'Temperature Sensor 1',
-                user_id: 1
-            },
-            {
-                device_name: 'Humidity Sensor 1',
-                user_id: 1
-            },
-            {
-                device_name: 'Motion Sensor 1',
-                user_id: 2
-            }
-        ]);
-        console.log('Sample devices created');
+        // Path to the CSV file
+        const csvFilePath = path.join(__dirname, '..', 'data', 'iot_data.csv'); // Adjust the path as needed
 
-        // Create sample time entries
-        const times = await Time.bulkCreate([
-            {
-                full_timestamp: new Date('2024-05-01T10:00:00'),
-                year: 2024,
-                month: 5,
-                day: 1,
-                hour: 10,
-                minute: 0,
-                second: 0
-            },
-            {
-                full_timestamp: new Date('2024-05-01T10:15:00'),
-                year: 2024,
-                month: 5,
-                day: 1,
-                hour: 10,
-                minute: 15,
-                second: 0
-            },
-            {
-                full_timestamp: new Date('2024-05-01T10:30:00'),
-                year: 2024,
-                month: 5,
-                day: 1,
-                hour: 10,
-                minute: 30,
-                second: 0
-            }
-        ]);
-        console.log('Sample time entries created');
+        // Read and parse the CSV file
+        const devices = [];
+        const times = [];
+        const iotFlows = [];
 
-        // Create sample IoT flows
-        const iotFlows = await IoT_Flow.bulkCreate([
-            {
-                id: 1,
-                packet_size_avg: 150.5,
-                packet_size_sum: 1505,
-                timestamp: new Date('2024-05-01T10:00:00'),
-                device_id: 1,
-                time_id: 1
-            },
-            {
-                id: 2,
-                packet_size_avg: 120.3,
-                packet_size_sum: 1203,
-                timestamp: new Date('2024-05-01T10:15:00'),
-                device_id: 2,
-                time_id: 2
-            },
-            {
-                id: 3,
-                packet_size_avg: 200.7,
-                packet_size_sum: 2007,
-                timestamp: new Date('2024-05-01T10:30:00'),
-                device_id: 3,
-                time_id: 3
-            }
-        ]);
-        console.log('Sample IoT flows created');
+        await new Promise((resolve, reject) => {
+            fs.createReadStream(csvFilePath)
+                .pipe(csv())
+                .on('data', (row) => {
+                    // Assuming the CSV has columns: device_name, device_id, full_timestamp, packet_size_avg, packet_size_sum, time_id
+                    devices.push({
+                        device_name: row.device_name,
+                        device_id: row.device_id,
+                    });
+
+                    times.push({
+                        full_timestamp: new Date(row.full_timestamp),
+                        year: new Date(row.full_timestamp).getFullYear(),
+                        month: new Date(row.full_timestamp).getMonth() + 1,
+                        day: new Date(row.full_timestamp).getDate(),
+                        hour: new Date(row.full_timestamp).getHours(),
+                        minute: new Date(row.full_timestamp).getMinutes(),
+                        second: new Date(row.full_timestamp).getSeconds(),
+                    });
+
+                    iotFlows.push({
+                        id: row.id,
+                        packet_size_avg: row.packet_size_avg,
+                        packet_size_sum: row.packet_size_sum,
+                        timestamp: new Date(row.full_timestamp),
+                        device_id: row.device_id,
+                        time_id: row.time_id,
+                    });
+                })
+                .on('end', resolve)
+                .on('error', reject);
+        });
+
+        // Insert data into the database
+        await Device.bulkCreate(devices);
+        console.log('Devices created successfully');
+
+        await Time.bulkCreate(times);
+        console.log('Time entries created successfully');
+
+        await IoT_Flow.bulkCreate(iotFlows);
+        console.log('IoT flows created successfully');
 
         console.log('Database setup completed successfully');
     } catch (error) {
@@ -93,4 +69,4 @@ async function setupDatabase() {
     }
 }
 
-setupDatabase(); 
+setupDatabase();

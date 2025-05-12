@@ -5,7 +5,7 @@ const { sendResponse, sendError } = require('../utils/responseHelper');
 const { User, Role, User_Role } = require('../models');
 const bcrypt = require('bcrypt');
 const { Sequelize } = require('sequelize');
-
+const {registerUser} = require('../kafka/consumer');
 // Welcome message
 const welcome = (req, res) => {
     res.status(200).json({
@@ -17,35 +17,39 @@ const welcome = (req, res) => {
 // Register a new user
 const register = async (req, res) => {
     try {
+        console.log('>>> Entered register route');
+
+        console.log('>>> req.body:', req.body);
+
         const { username, email, password } = req.body;
-        console.log('Received request to register:', username);
 
         if (!username || !email || !password) {
+            console.log('>>> Missing fields');
             return sendError(res, 400, 'Username, email and password are required.');
         }
 
-        console.log('Checking if user already exists...');
+        console.log('>>> Checking if user exists');
         const existingUser = await User.findOne({
             where: {
-                [Sequelize.Op.or]: [
-                    { username: username },
-                    { email: email }
-                ]
+                [Sequelize.Op.or]: [{ username }, { email }]
             }
         });
 
         if (existingUser) {
+            console.log('>>> User exists');
             return sendError(res, 400, 'User with this username or email already exists.');
         }
 
+        console.log('>>> Hashing password');
         const hashedPassword = await hashPassword(password);
+
+        console.log('>>> Creating user');
         const newUser = await User.create({
             username,
             email,
             password: hashedPassword
         });
-        
-        // Remove sensitive data before sending response
+
         const userResponse = {
             id: newUser.id,
             username: newUser.username,
@@ -53,12 +57,13 @@ const register = async (req, res) => {
             createdAt: newUser.createdAt
         };
 
+        console.log('>>> Sending response');
         sendResponse(res, 201, {
             message: 'User registered successfully.',
             user: userResponse
         });
     } catch (err) {
-        console.error('Error during registration:', err);
+        console.error('>>> Caught error in register:', err);
         sendError(res, 500, 'An error occurred while registering the user.');
     }
 };

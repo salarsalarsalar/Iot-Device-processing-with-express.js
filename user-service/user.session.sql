@@ -5,6 +5,10 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL
 );
 
+-- Add the email column (nullable to avoid breaking existing inserts)
+ALTER TABLE users
+ADD COLUMN email VARCHAR(255) NOT NULL;
+
 -- ROLES (many-to-many with USERS via USER_ROLES)
 CREATE TABLE roles (
     id INT PRIMARY KEY AUTO_INCREMENT,
@@ -29,41 +33,4 @@ CREATE TABLE devices (
     -- FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Add the user_id column (nullable to avoid breaking existing inserts)
-ALTER TABLE devices
-ADD COLUMN user_id INT NULL;
-
--- Add the foreign key constraint to reference the users table
-ALTER TABLE devices
-ADD CONSTRAINT fk_user_device
-FOREIGN KEY (user_id) REFERENCES users(id);
-
-
--- TIME (one-to-many with IOT_FLOWS)
-CREATE TABLE time (
-    time_id INT PRIMARY KEY AUTO_INCREMENT,
-    full_timestamp DATETIME,
-    year INT,
-    month INT,
-    day INT,
-    hour INT,
-    minute INT,
-    second INT
-);
-
--- IOT_FLOWS (many-to-one with DEVICES and TIME)
-CREATE TABLE iot_flows (
-    id INT PRIMARY KEY,
-    packet_size_avg FLOAT,
-    packet_size_sum INT,
-    timestamp DATETIME,
-    device_id INT,
-    time_id INT,
-    FOREIGN KEY (device_id) REFERENCES devices(device_id),
-    FOREIGN KEY (time_id) REFERENCES time(time_id)
-);
-
-
-SELECT * FROM iot_flows;
-SELECT * FROM iot_flows WHERE id = 1;
 

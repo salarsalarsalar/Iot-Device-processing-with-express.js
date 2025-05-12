@@ -1,20 +1,20 @@
 module.exports = {
     apps: [
-      {
-        name: 'flask-app',
-        script: 'python', // Start the Flask app with Python
-        args: 'run.py', // Specify the script to run
-        cwd: './data-processing-service', // The directory where your Flask app is located
-        env: {
-          FLASK_APP: 'run.py',
-          FLASK_ENV: 'development',
-          // Add any other environment variables you may need
-        },
-        watch: true, // Optional: restart the app if files change (useful for development)
-        instances: 1, // You can increase this if you want to run multiple instances
-         // instances: 'max',  // Spawn as many instances as CPU cores
-        exec_mode: 'cluster',  
-      },
+      // {
+      //   name: 'flask-app',
+      //   script: 'python', // Start the Flask app with Python
+      //   args: 'run.py', // Specify the script to run
+      //   cwd: './data-processing-service', // The directory where your Flask app is located
+      //   env: {
+      //     FLASK_APP: 'run.py',
+      //     FLASK_ENV: 'development',
+      //     // Add any other environment variables you may need
+      //   },
+      //   watch: true, // Optional: restart the app if files change (useful for development)
+      //   instances: 1, // You can increase this if you want to run multiple instances
+      //    // instances: 'max',  // Spawn as many instances as CPU cores
+      //   exec_mode: 'cluster',  
+      // },
       {
         name: 'api-gateway',
         script: './api-gateway/app.js',
@@ -60,10 +60,24 @@ module.exports = {
         instances: 1,
         autorestart: true,
         watch: false,
+        exec_interpreter: 'cmd.exe',
         env_development: { NODE_ENV: 'development' },
         env_staging: { NODE_ENV: 'staging' },
         env_production: { NODE_ENV: 'production' }
-      }
+      },
+      // {
+      //   name:'kafka',
+      //   script: "docker-compose",
+      //   args: "up -d",
+      //   cwd: './kafka',
+      //   instances: 1,
+      //   autorestart: true,
+      //   watch: false,
+      //   exec_interpreter: 'cmd.exe',
+      //   env_development: { NODE_ENV: 'development' },
+      //   env_staging: { NODE_ENV: 'staging' },
+      //   env_production: { NODE_ENV: 'production' }
+      // }
     ]
   }
   

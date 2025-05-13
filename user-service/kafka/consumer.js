@@ -1,19 +1,51 @@
-// userController.js
-const { producer } = require('./kafka');
+// kafkaConsumer.js
+const { Kafka } = require('kafkajs');
+const { User, Role, User_Role } = require('../models');
+const { Sequelize } = require('sequelize');
+// Initialize the Kafka client
+const kafka = new Kafka({
+    clientId: 'user-service',
+    brokers: ['localhost:29092'],  // Use the appropriate broker address for your setup
+});
 
-async function registerUser(req, res, user) {
-  // register logic ...
+// Create a consumer instance
+const consumer = kafka.consumer({ groupId: 'user-service-group' });
 
-  await producer.connect();
-  await producer.send({
-    topic: 'user.events',
-    messages: [
-      {
-        key: 'user.created',
-        value: JSON.stringify(user),
-      },
-    ],
-  });
+const run = async () => {
+    try {
+        await consumer.connect();
+        await consumer.subscribe({ topic: 'user-registered', fromBeginning: true });
 
-  res.json({ message: 'User registered', user });
-}
+        await consumer.run({
+            eachMessage: async ({ topic, partition, message }) => {
+                try {
+                    const userData = JSON.parse(message.value.toString());
+
+                    // Logging for audit
+                    console.log('----------------------------------');
+                    console.log(' Kafka:');
+                    console.log(' New User Register logged via Kafka:');
+                    console.log(` Username: ${userData.username}`);
+                    console.log(` Email: ${userData.email}`);
+                    console.log(` Registered At: ${new Date().toISOString()}`);
+
+                    // (Optional) Tracking
+                    // You can also push this data to an analytics service or write to a log file if needed
+                } catch (error) {
+                    console.error(' Error parsing Kafka message for tracking:', error);
+                }
+            }
+        });
+
+
+    } catch (err) {
+        console.error('Error in consumer:', err);
+    }
+};
+
+process.on('SIGINT', async () => {
+    await consumer.disconnect();
+    process.exit(0);
+});
+
+run();

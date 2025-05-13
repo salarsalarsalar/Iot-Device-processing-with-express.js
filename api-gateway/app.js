@@ -8,7 +8,6 @@ const path = require('path');
 const gatewayRoutes = require('./routes/gatewayRoutes');
 const logService = require('./middleware/logService');
 const { logger } = require('./middleware/logger');
-const bodyParser = require('body-parser');
 const { notFound } = require('./middleware/notFound');
 const cronLogger = require('./utils/cronLogger');
 const helmet = require('helmet');
@@ -30,7 +29,6 @@ const GATEWAY_PORT = process.env.GATEWAY_PORT;
 const GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 // Middleware
-app.use(bodyParser.json()); // Parse incoming JSON requests
 app.use(cors()); // Allows cross-origin resource sharing
 app.use(logger); // Logs from gateway
 app.use(logService); // Logs related to services

@@ -6,7 +6,7 @@ module.exports = (req, res, next) => {
     if (originalUrl.startsWith('/api/iot')) {
       console.log(`[Gateway] --> Routing to IoT Service for: ${originalUrl}`);
       req.targetService = 'iot-service';
-    } else if (originalUrl.startsWith('/api/users')) {
+    } else if (originalUrl.startsWith('/api/user')) {
       console.log(`[Gateway] --> Routing to User Service for: ${originalUrl}`);
       req.targetService = 'user-service';
     } else {

@@ -18,7 +18,8 @@ const { limiter } = require('./middleware/rateLimiter');
 const userRoutes = require('./routes/userRoutes');
 const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
-
+const initKafka = require('./kafka/initKafka');
+require('./kafka/consumer'); // Import the Kafka consumer
 const app = express(); // initialising express.js
 
 
@@ -35,6 +36,9 @@ app.use(cors()); // allows cross origin resource sharing
 app.use(logger); // Logs GET,POST,DELETE,PUT
 app.use(limiter); // applies rate limiting
 app.use(helmet()); // protects against XSS and CSRF
+
+// Kafka Producer Initialization
+initKafka();
 
 // Routes
 app.use('/', userRoutes);

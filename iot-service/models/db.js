@@ -10,15 +10,6 @@ dotenvExpand.expand(sharedEnv); // Expand shared variables
 const serviceEnv = dotenv.config();
 dotenvExpand.expand(serviceEnv); // Expand service-specific variables
 
-// shared env variables
-console.log(
-  {
-  'DB_HOST:': process.env.DB_HOST,
-  'DB_USER:': process.env.DB_USER,
-  'DB_PASSWORD:': process.env.DB_PASSWORD,
-  'IOT_DB_NAME:': process.env.IOT_DB_NAME,
-  }
-);
 // Create a MySQL connection pool
 const pool = mysql.createPool({
   host: process.env.DB_HOST,

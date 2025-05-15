@@ -12,10 +12,12 @@ const dotenv = require('dotenv');
 const iotModel = require('../models/iotModel');
 const {ReadCSV} = require('../utils/controllerHelper');
 const {redisClient} = require('../utils/redisClient');
-const {Time, Device, DeviceData} = require('../models');
+const {Time, Device, DeviceData, IoT_Flow} = require('../models');
 const {getOrSetCache} = require('../utils/cache')
 const {promisifyModel} = require('../utils/dbHelper')
 const { sendResponse, sendError } = require('../utils/responseHelper');
+// const { insertIoTData } = require('../models/iotModel');
+const { broadcastNewIoTData } = require('../webSocket/publisher');
 
 
 // @route: /api/iot/
@@ -23,6 +25,7 @@ const { sendResponse, sendError } = require('../utils/responseHelper');
 exports.welcome = (req, res) => {
     sendResponse(res, 200, { message: 'Welcome to IoT Service' });
 };
+
 
 // @route: /api/iot/devices
 // @desc: Get all devices
@@ -58,7 +61,7 @@ exports.getDevice = async (req, res) => {
     }
 };
 
-// @route: /api/iot/devices
+// @route: /api/iot/create
 // @desc: Create a new device
 exports.createDevice = async (req, res) => {
     try {
@@ -222,4 +225,14 @@ exports.uploadCSV = (req, res, next) => {
         .on('error', (err) => {
             next(err);
         });
+};
+
+exports.createData = async (req, res, next) => {
+  try {
+    const newData = await iotModel.insertIotData(req.body);
+    broadcastNewIoTData(newData); // Broadcast to clients
+    res.status(201).json({ message: 'Data inserted', data: newData });
+  } catch (error) {
+    next(error);
+  }
 };

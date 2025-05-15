@@ -37,6 +37,7 @@ router.use('/api/iot', createProxyMiddleware({
   target: process.env.IOT_SERVICE_URL,
   changeOrigin: true,
   secure: false, // Allows HTTPS with self-signed certs
+  ws: true, // WebSocket support
   pathRewrite: { '^/api/iot': '' },
   onProxyReq: (proxyReq, req) => {
     proxyReq.setHeader('x-gateway', 'API Gateway');

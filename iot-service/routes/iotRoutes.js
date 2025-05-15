@@ -27,6 +27,10 @@ router.delete('/data/:id', verifyToken, iotController.deleteData);
 // Recent Data and Statistics
 router.get('/data/recent', iotController.getRecentData);
 
+
+// Post Data through WebSocket
+router.post('/create',iotController.createData);
+
 // CSV Upload
 const storage = multer.diskStorage({
     destination: './uploads/',

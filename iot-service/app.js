@@ -11,6 +11,7 @@ const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 const cluster = require('cluster');
 const os = require('os');
+const WebSocket = require('ws');
 
 // imports of files of project
 const { logger } = require('./middleware/logger');
@@ -19,7 +20,8 @@ const iotRoutes = require('./routes/iotRoutes');
 const { limiter } = require('./middleware/rateLimiter');
 const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
-
+const setupWebSocket = require('./webSocket/webSocket'); 
+const { startConsumer } = require('./utils/rabbitConsumer'); 
 const app = express(); // initialising express.js
 
 // initialising environment variables
@@ -36,9 +38,13 @@ app.use(logger); // Logs GET,POST,DELETE,PUT
 app.use(limiter); // applies rate limiting
 app.use(helmet()); // protects against XSS and CSRF
 
+
 // Routes
 app.use('/', iotRoutes);
 // app.use('/api/user', userRoutes);
+
+// Rabbit MQ Consumer
+startConsumer(); // Start the RabbitMQ consumer
 
 // Handles undefined routes
 app.use(notFound);
@@ -52,7 +58,22 @@ const sslOptions = {
   cert: fs.readFileSync('./cert/server.cert')
 };
 
-https.createServer(sslOptions, app).listen(PORT, () => {
+// Create HTTPS server
+const server = https.createServer(sslOptions, app);
+
+// // Attach WebSocket upgrade support to the same server
+// server.on('upgrade', (req, socket, head) => {
+//   console.log(' Upgrade request received for:', req.url);
+//   // This allows http-proxy-middleware to handle upgrades
+//   gatewayRoutes.handleUpgrade(req, socket, head);
+// });
+
+// WebSocket server
+const wss = new WebSocket.Server({ server });
+setupWebSocket(wss); // Setup WebSocket connection
+
+// Start the HTTPS server
+server.listen(PORT, () => {
   console.log(`HTTPS Server running on ${IOT_URL}`);
   CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
 });

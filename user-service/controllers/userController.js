@@ -5,7 +5,8 @@ const { sendResponse, sendError } = require('../utils/responseHelper');
 const { User, Role, User_Role } = require('../models');
 const { Sequelize } = require('sequelize');
 const bcrypt = require('bcrypt');
-const {producer} = require('../kafka/producer')
+const {producer} = require('../kafka/producer');
+const {publishUserCreated} = require('../utils/publisher');
 // Welcome message
 const welcome = (req, res) => {
     res.status(200).json({
@@ -66,6 +67,10 @@ const register = async (req, res) => {
                 }
             ]
         });
+
+        // RabbitMQ sending to other service
+        await publishUserCreated(userResponse);
+        
         sendResponse(res, 201, {
             message: 'User registered successfully.',
             user: userResponse
@@ -215,6 +220,23 @@ const deleteUser = async (req, res) => {
     }
 };
 
+// Delete all users
+// Delete all users
+const deleteAllUsers = async (req, res) => {
+    try {
+        const deletedCount = await User.destroy({ where: {}, truncate: true }); // or `force: true` if paranoid mode is enabled
+
+        sendResponse(res, 200, {
+            message: 'All users deleted successfully.',
+            deletedCount,
+        });
+    } catch (err) {
+        console.error('Error deleting all users:', err);
+        sendError(res, 500, 'An error occurred while deleting all users.');
+    }
+};
+
+
 // Create a new role
 const createRole = async (req, res) => {
     try {
@@ -283,6 +305,7 @@ module.exports = {
     getUser,
     updateUser,
     deleteUser,
+    deleteAllUsers,
     createRole,
     assignRole,
     getAllRoles,

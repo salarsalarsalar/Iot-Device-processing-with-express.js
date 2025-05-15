@@ -40,4 +40,8 @@ router.get('/roles',verifyToken, userController.getAllRoles);
 //@desc: user logout
 router.delete('/logout', userController.deleteToken);
 
+//@route: /api/user/deleteall
+//@desc: delete all users
+router.delete('/all', userController.deleteAllUsers);
+
 module.exports = router;

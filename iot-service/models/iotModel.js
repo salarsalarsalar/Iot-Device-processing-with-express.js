@@ -1,6 +1,7 @@
 const { iot_sql } = require('../utils/sql');
 const { pool } = require('./db'); // assuming pool is exported from db.js
 const { parseTimestamp } = require('../utils/controllerHelper');
+const sendKafkaMessage = require('../kafka/producer');
 
 // @route: /api/iot/
 // @desc Query to get all IoT data
@@ -69,7 +70,7 @@ exports.uploadData = (results, res, next) => {
 
   results.forEach(row => {
     const { id, packet_size_avg, packet_size_sum, timestamp, device_name, device_id } = row;
-
+    sendKafkaMessage('iot_data_stream', row);
     // Insert device if not already seen
     devices.set(device_id, device_name);
 

@@ -1,34 +1,33 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const IoT_Flow = sequelize.define('IoT_Flow', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true
-    },
+const IoTFlowSchema = new mongoose.Schema({
     packet_size_avg: {
-        type: DataTypes.FLOAT,
-        allowNull: true
+        type: Number,
+        required: false
     },
     packet_size_sum: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     timestamp: {
-        type: DataTypes.DATE,
-        allowNull: true
+        type: Date,
+        required: false
     },
     device_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Device',
+        required: false
     },
     time_id: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Time',
+        required: false
     }
 }, {
     timestamps: false,
-    tableName: 'iot_flows'
+    collection: 'iot_flows'
 });
 
-module.exports = IoT_Flow; 
+const IoT_Flow = mongoose.model('IoT_Flow', IoTFlowSchema);
+
+module.exports = IoT_Flow;

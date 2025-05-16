@@ -13,6 +13,7 @@ const cluster = require('cluster');
 const os = require('os');
 
 // imports of files of project
+const connectDB  = require('./config/database'); // MongoDB connection
 const { logger } = require('./middleware/logger');
 const { limiter } = require('./middleware/rateLimiter');
 const userRoutes = require('./routes/userRoutes');
@@ -20,6 +21,8 @@ const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
 const initKafka = require('./kafka/initKafka');
 require('./kafka/consumer'); // Import the Kafka consumer
+
+
 const app = express(); // initialising express.js
 
 
@@ -40,6 +43,15 @@ app.use(helmet()); // protects against XSS and CSRF
 // Kafka Producer Initialization
 initKafka();
 
+// MongoDB Connection
+connectDB().then(() => {
+    console.log('MongoDB connection has been established successfully.');
+  })
+  .catch((err) => {
+    console.error('Unable to connect to the MongoDB database:', err);
+    process.exit(1);
+  });
+  
 // Routes
 app.use('/', userRoutes);
 

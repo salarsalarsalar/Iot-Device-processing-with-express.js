@@ -22,6 +22,7 @@ const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
 const setupWebSocket = require('./webSocket/webSocket'); 
 const { startConsumer } = require('./utils/rabbitConsumer'); 
+const connectDB = require('./config/database'); // MongoDB connection
 const app = express(); // initialising express.js
 
 // initialising environment variables
@@ -46,6 +47,14 @@ app.use('/', iotRoutes);
 // Rabbit MQ Consumer
 startConsumer(); // Start the RabbitMQ consumer
 
+// MongoDB Connection
+connectDB().then(() => {
+    console.log('MongoDB connection has been established successfully.');
+  })
+  .catch((err) => {
+    console.error('Unable to connect to the MongoDB database:', err);
+    process.exit(1);
+  });
 // Handles undefined routes
 app.use(notFound);
 

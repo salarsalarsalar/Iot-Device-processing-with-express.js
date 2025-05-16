@@ -1,43 +1,39 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const Time = sequelize.define('Time', {
-    time_id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
+
+const TimeSchema = new mongoose.Schema({
     full_timestamp: {
-        type: DataTypes.DATE,
-        allowNull: true
+        type: Date,
+        required: false
     },
     year: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     month: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     day: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     hour: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     minute: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     },
     second: {
-        type: DataTypes.INTEGER,
-        allowNull: true
+        type: Number,
+        required: false
     }
 }, {
     timestamps: false,
-    tableName: 'time'
+    collection: 'time'
 });
 
+const Time = mongoose.model('Time', TimeSchema);
 module.exports = Time; 

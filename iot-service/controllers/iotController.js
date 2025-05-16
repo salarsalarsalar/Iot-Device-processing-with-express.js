@@ -31,7 +31,7 @@ exports.welcome = (req, res) => {
 // @desc: Get all devices
 exports.getDevices = async (req, res) => {
     try {
-        const devices = await Device.findAll();
+        const devices = await Device.find();
         sendResponse(res, 200, devices);
     } catch (error) {
         sendError(res, 500, 'Error fetching devices');
@@ -42,14 +42,11 @@ exports.getDevices = async (req, res) => {
 // @desc: Get a single device with its data
 exports.getDevice = async (req, res) => {
     try {
-        const device = await Device.findOne({
-            where: { device_id: req.params.device_id },
-            include: [{
-                model: IoT_Flow,
-                limit: 10,
-                order: [['timestamp', 'DESC']]
-            }]
-        });
+        const device = await Device.findById(req.params.device_id)
+            .populate({
+                path: 'iot_flows',
+                options: { limit: 10, sort: { timestamp: -1 } }
+            });
 
         if (!device) {
             return sendError(res, 404, 'Device not found');
@@ -76,49 +73,48 @@ exports.createDevice = async (req, res) => {
 // @desc: Update a device
 exports.updateDevice = async (req, res) => {
     try {
-        const device = await Device.findOne({
-            where: { device_id: req.params.device_id }
-        });
+        const device = await Device.findByIdAndUpdate(
+            req.params.device_id,
+            req.body,
+            { new: true }
+        );
 
         if (!device) {
             return sendError(res, 404, 'Device not found');
         }
 
-        await device.update(req.body);
         sendResponse(res, 200, device);
     } catch (error) {
         sendError(res, 500, 'Error updating device');
     }
 };
 
+
 // @route: /api/iot/devices/:device_id
 // @desc: Delete a device
 exports.deleteDevice = async (req, res) => {
     try {
-        const device = await Device.findOne({
-            where: { device_id: req.params.device_id }
-        });
+        const device = await Device.findByIdAndDelete(req.params.device_id);
 
         if (!device) {
             return sendError(res, 404, 'Device not found');
         }
 
-        await device.destroy();
         sendResponse(res, 200, { message: 'Device deleted successfully' });
     } catch (error) {
         sendError(res, 500, 'Error deleting device');
     }
 };
-
 // @route: /api/iot/data
 // @desc: Get all IoT data
 exports.getAllData = async (req, res) => {
     try {
-        const data = await IoT_Flow.findAll({
-            include: [Device, Time],
-            order: [['timestamp', 'DESC']]
-        });
-        await getOrSetCache('all_devices', () => promisifyModel(IoT_Flow.findAll));
+        const data = await IoT_Flow.find()
+            .populate('device_id')
+            .populate('time_id')
+            .sort({ timestamp: -1 });
+
+        await getOrSetCache('all_devices', () => IoT_Flow.find());
         sendResponse(res, 200, data);
     } catch (error) {
         sendError(res, 500, 'Error fetching IoT data');
@@ -129,21 +125,21 @@ exports.getAllData = async (req, res) => {
 // @desc: Get IoT data by ID
 exports.getDataById = async (req, res) => {
     try {
-        const data = await IoT_Flow.findOne({
-            where: { id: req.params.id },
-            include: [Device, Time]
-        });
+        const data = await IoT_Flow.findById(req.params.id)
+            .populate('device_id')
+            .populate('time_id');
 
         if (!data) {
             return sendError(res, 404, `Data with ID ${req.params.id} not found`);
         }
 
-        await getOrSetCache(`device:${req.params.id}`, () => promisifyModel(IoT_Flow.findOne));
+        await getOrSetCache(`device:${req.params.id}`, () => IoT_Flow.findById(req.params.id));
         sendResponse(res, 200, data);
     } catch (error) {
         sendError(res, 500, 'Error fetching IoT data');
     }
 };
+
 
 // @route: /api/iot/data
 // @desc: Insert IoT data
@@ -160,15 +156,15 @@ exports.insertData = async (req, res) => {
 // @desc: Update IoT data
 exports.updateData = async (req, res) => {
     try {
-        const data = await IoT_Flow.findOne({
-            where: { id: req.params.id }
-        });
-
+        const data = await IoT_Flow.findById(req.params.id);
         if (!data) {
             return sendError(res, 404, `Data with ID ${req.params.id} not found`);
         }
 
-        await data.update(req.body);
+        // Apply updates from req.body
+        Object.assign(data, req.body);
+        await data.save();
+
         sendResponse(res, 200, { message: 'Data updated successfully', data });
     } catch (error) {
         sendError(res, 500, 'Error updating data');
@@ -179,31 +175,28 @@ exports.updateData = async (req, res) => {
 // @desc: Delete IoT data
 exports.deleteData = async (req, res) => {
     try {
-        const data = await IoT_Flow.findOne({
-            where: { id: req.params.id }
-        });
+        const data = await IoT_Flow.findByIdAndDelete(req.params.id);
 
         if (!data) {
             return sendError(res, 404, `Data with ID ${req.params.id} not found`);
         }
 
-        await data.destroy();
         sendResponse(res, 200, { message: 'Data deleted successfully' });
     } catch (error) {
         sendError(res, 500, 'Error deleting data');
     }
 };
-
 // @route: /api/iot/data/recent
 // @desc: Get recent IoT data
 exports.getRecentData = async (req, res) => {
     try {
-        const data = await IoT_Flow.findAll({
-            include: [Device, Time],
-            order: [['timestamp', 'DESC']],
-            limit: 10
-        });
-        await getOrSetCache('recent_devices', () => promisifyModel(IoT_Flow.findAll));
+        const data = await IoT_Flow.find()
+            .populate('device_id')
+            .populate('time_id')
+            .sort({ timestamp: -1 })
+            .limit(10);
+
+        await getOrSetCache('recent_devices', () => IoT_Flow.find().limit(10));
         sendResponse(res, 200, data);
     } catch (error) {
         sendError(res, 500, 'Error fetching recent data');
@@ -217,22 +210,29 @@ exports.uploadCSV = (req, res, next) => {
 
     const filePath = path.join(__dirname, '..', 'uploads', req.file.originalname);
     const results = [];
-    // Created a stream for reading potentially large csv data
+
     fs.createReadStream(filePath)
         .pipe(csv())
         .on('data', (row) => {ReadCSV(row,results)})
-        .on('end', () => {iotModel.uploadData(results, res, next);})
+        .on('end', async () => {
+            try {
+                const result = await iotModel.uploadData(results);
+                sendResponse(res, 201, result);
+            } catch (error) {
+                next(error);
+            }
+        })
         .on('error', (err) => {
             next(err);
         });
 };
 
 exports.createData = async (req, res, next) => {
-  try {
-    const newData = await iotModel.insertIotData(req.body);
-    broadcastNewIoTData(newData); // Broadcast to clients
-    res.status(201).json({ message: 'Data inserted', data: newData });
-  } catch (error) {
-    next(error);
-  }
+    try {
+        const newData = await iotModel.insertIotData(req.body);
+        broadcastNewIoTData(newData);
+        res.status(201).json({ message: 'Data inserted', data: newData });
+    } catch (error) {
+        next(error);
+    }
 };

@@ -5,7 +5,6 @@ const router = express.Router();
 const iotController = require('../controllers/iotController');
 const multer = require('multer');
 const path = require('path');
-const { verifyToken } = require('../middleware/verifyToken');
 
 // Welcome message
 router.get('/home', iotController.welcome);
@@ -13,16 +12,16 @@ router.get('/home', iotController.welcome);
 // Device Management Routes
 router.get('/devices', iotController.getDevices);
 router.get('/devices/:device_id', iotController.getDevice);
-router.post('/devices', verifyToken, iotController.createDevice);
-router.put('/devices/:device_id', verifyToken, iotController.updateDevice);
-router.delete('/devices/:device_id', verifyToken, iotController.deleteDevice);
+router.post('/devices', iotController.createDevice);
+router.put('/devices/:device_id', iotController.updateDevice);
+router.delete('/devices/:device_id', iotController.deleteDevice);
 
 // IoT Data Management Routes
 router.get('/data', iotController.getAllData);
 router.get('/data/:id', iotController.getDataById);
-router.post('/data', verifyToken, iotController.insertData);
-router.put('/data/:id', verifyToken, iotController.updateData);
-router.delete('/data/:id', verifyToken, iotController.deleteData);
+router.post('/data', iotController.insertData);
+router.put('/data/:id', iotController.updateData);
+router.delete('/data/:id', iotController.deleteData);
 
 // Recent Data and Statistics
 router.get('/data/recent', iotController.getRecentData);
@@ -40,6 +39,6 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({ storage });
-router.post('/upload', verifyToken, upload.single('file'), iotController.uploadCSV);
+router.post('/upload', upload.single('file'), iotController.uploadCSV);
 
 module.exports = router;

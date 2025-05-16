@@ -1,23 +1,19 @@
-const { DataTypes } = require('sequelize');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 
-const User_Role = sequelize.define('User_Role', {
-    id: {
-        type: DataTypes.INTEGER,
-        primaryKey: true,
-        autoIncrement: true
-    },
+const UserRoleSchema = mongoose.Schema({
     user_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
     },
     role_id: {
-        type: DataTypes.INTEGER,
-        allowNull: false
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Role',
+        required: true
     }
 }, {
     timestamps: false,
-    tableName: 'user_roles'
+    collection: 'user_roles'
 });
-
+const User_Role = mongoose.model('User_Role', UserRoleSchema);
 module.exports = User_Role; 

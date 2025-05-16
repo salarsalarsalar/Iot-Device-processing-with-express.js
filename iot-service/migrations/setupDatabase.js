@@ -1,71 +1,88 @@
 const fs = require('fs');
 const path = require('path');
 const csv = require('csv-parser');
-const sequelize = require('../config/database');
+const mongoose = require('mongoose');
 const { Device, Time, IoT_Flow } = require('../models');
+const connectDB = require('../config/database');
 
 async function setupDatabase() {
     try {
-        // Sync all models
-        await sequelize.sync({ force: true });
-        console.log('Database tables created successfully');
+        // Connect to MongoDB
+        await connectDB();
+        console.log('Connected to MongoDB');
+
+        // Clear existing collections
+        await Promise.all([
+            Device.deleteMany({}),
+            Time.deleteMany({}),
+            IoT_Flow.deleteMany({})
+        ]);
+        console.log('Existing collections cleared');
 
         // Path to the CSV file
-        const csvFilePath = path.join(__dirname, '..', 'data', 'iot_data.csv'); // Adjust the path as needed
+        const csvFilePath = path.join(__dirname, '..', 'data', 'iot_data.csv');
 
         // Read and parse the CSV file
-        const devices = [];
-        const times = [];
+        const devices = new Map();
+        const times = new Map();
         const iotFlows = [];
 
         await new Promise((resolve, reject) => {
             fs.createReadStream(csvFilePath)
                 .pipe(csv())
                 .on('data', (row) => {
-                    // Assuming the CSV has columns: device_name, device_id, full_timestamp, packet_size_avg, packet_size_sum, time_id
-                    devices.push({
-                        device_name: row.device_name,
-                        device_id: row.device_id,
-                    });
+                    // Handle devices
+                    if (!devices.has(row.device_id)) {
+                        devices.set(row.device_id, {
+                            _id: new mongoose.Types.ObjectId(row.device_id),
+                            device_name: row.device_name
+                        });
+                    }
 
-                    times.push({
-                        full_timestamp: new Date(row.full_timestamp),
-                        year: new Date(row.full_timestamp).getFullYear(),
-                        month: new Date(row.full_timestamp).getMonth() + 1,
-                        day: new Date(row.full_timestamp).getDate(),
-                        hour: new Date(row.full_timestamp).getHours(),
-                        minute: new Date(row.full_timestamp).getMinutes(),
-                        second: new Date(row.full_timestamp).getSeconds(),
-                    });
+                    // Handle times
+                    const timestamp = new Date(row.full_timestamp);
+                    const timeKey = timestamp.toISOString();
+                    if (!times.has(timeKey)) {
+                        times.set(timeKey, {
+                            _id: new mongoose.Types.ObjectId(),
+                            full_timestamp: timestamp,
+                            year: timestamp.getFullYear(),
+                            month: timestamp.getMonth() + 1,
+                            day: timestamp.getDate(),
+                            hour: timestamp.getHours(),
+                            minute: timestamp.getMinutes(),
+                            second: timestamp.getSeconds()
+                        });
+                    }
 
+                    // Handle IoT flows
                     iotFlows.push({
-                        id: row.id,
-                        packet_size_avg: row.packet_size_avg,
-                        packet_size_sum: row.packet_size_sum,
-                        timestamp: new Date(row.full_timestamp),
-                        device_id: row.device_id,
-                        time_id: row.time_id,
+                        packet_size_avg: parseFloat(row.packet_size_avg),
+                        packet_size_sum: parseInt(row.packet_size_sum),
+                        timestamp: timestamp,
+                        device_id: devices.get(row.device_id)._id,
+                        time_id: times.get(timeKey)._id
                     });
                 })
                 .on('end', resolve)
                 .on('error', reject);
         });
 
-        // Insert data into the database
-        await Device.bulkCreate(devices);
+        // Insert data into MongoDB
+        await Device.insertMany(Array.from(devices.values()));
         console.log('Devices created successfully');
 
-        await Time.bulkCreate(times);
+        await Time.insertMany(Array.from(times.values()));
         console.log('Time entries created successfully');
 
-        await IoT_Flow.bulkCreate(iotFlows);
+        await IoT_Flow.insertMany(iotFlows);
         console.log('IoT flows created successfully');
 
         console.log('Database setup completed successfully');
     } catch (error) {
         console.error('Error setting up database:', error);
     } finally {
-        await sequelize.close();
+        await mongoose.connection.close();
     }
 }
 

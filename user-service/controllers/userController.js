@@ -25,13 +25,12 @@ const register = async (req, res) => {
             return sendError(res, 400, 'Username, email and password are required.');
         }
 
+        // Check for existing user
         const existingUser = await User.findOne({
-            where: {
-                [Sequelize.Op.or]: [
-                    { username: username },
-                    { email: email }
-                ]
-            }
+            $or: [
+                { username: username },
+                { email: email }
+            ]
         });
 
         if (existingUser) {
@@ -89,38 +88,28 @@ const login = async (req, res) => {
     try {
         const { email, password } = req.body;
         
-        const user = await User.findOne({ where: { email } });
+        const user = await User.findOne({ email });
         if (!user) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
+            return sendError(res, 401, 'Invalid credentials');
         }
         
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(401).json({
-                success: false,
-                error: 'Invalid credentials'
-            });
+            return sendError(res, 401, 'Invalid credentials');
         }
         
-        const token = generateToken({ id: user.id, email: user.email });
-        const refreshToken = generateRefreshToken({ id: user.id, email: user.email });
+        const token = generateToken({ id: user._id, email: user.email });
+        const refreshToken = generateRefreshToken({ id: user._id, email: user.email });
         
-        // Store refresh token in cache
-        await getOrSetCache(`refresh_token:${user.id}`, refreshToken);
+        await getOrSetCache(`refresh_token:${user._id}`, refreshToken);
         
-        res.status(200).json({
-            success: true,
-            data: {
-                token,
-                refreshToken,
-                user: {
-                    id: user.id,
-                    username: user.username,
-                    email: user.email
-                }
+        sendResponse(res, 200, {
+            token,
+            refreshToken,
+            user: {
+                id: user._id,
+                username: user.username,
+                email: user.email
             }
         });
     } catch (err) {
@@ -132,13 +121,9 @@ const login = async (req, res) => {
 // Get all users
 const getUsers = async (req, res) => {
     try {
-        const users = await User.findAll({
-            attributes: ['id', 'username', 'email', 'createdAt'],
-            include: [{
-                model: Role,
-                through: { attributes: [] }
-            }]
-        });
+        const users = await User.find()
+            .select('username email createdAt')
+            .populate('roles');
         sendResponse(res, 200, users);
     } catch (err) {
         console.error('Error fetching users:', err);
@@ -149,14 +134,9 @@ const getUsers = async (req, res) => {
 // Get a single user
 const getUser = async (req, res) => {
     try {
-        const user = await User.findOne({
-            where: { id: req.params.id },
-            attributes: ['id', 'username', 'email', 'createdAt'],
-            include: [{
-                model: Role,
-                through: { attributes: [] }
-            }]
-        });
+        const user = await User.findById(req.params.id)
+            .select('username email createdAt')
+            .populate('roles');
 
         if (!user) {
             return sendError(res, 404, 'User not found.');
@@ -173,29 +153,27 @@ const getUser = async (req, res) => {
 const updateUser = async (req, res) => {
     try {
         const { username, email, password } = req.body;
-        const user = await User.findOne({ where: { id: req.params.id } });
+        const updateData = {};
+
+        if (username) updateData.username = username;
+        if (email) updateData.email = email;
+        if (password) {
+            updateData.password = await hashPassword(password);
+        }
+
+        const user = await User.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true }
+        ).select('username email');
 
         if (!user) {
             return sendError(res, 404, 'User not found.');
         }
 
-        if (password) {
-            const hashedPassword = await hashPassword(password);
-            user.password = hashedPassword;
-        }
-
-        if (username) user.username = username;
-        if (email) user.email = email;
-
-        await user.save();
-
         sendResponse(res, 200, {
             message: 'User updated successfully.',
-            user: {
-                id: user.id,
-                username: user.username,
-                email: user.email
-            }
+            user
         });
     } catch (err) {
         console.error('Error updating user:', err);
@@ -206,13 +184,12 @@ const updateUser = async (req, res) => {
 // Delete a user
 const deleteUser = async (req, res) => {
     try {
-        const user = await User.findOne({ where: { id: req.params.id } });
+        const user = await User.findByIdAndDelete(req.params.id);
 
         if (!user) {
             return sendError(res, 404, 'User not found.');
         }
 
-        await user.destroy();
         sendResponse(res, 200, { message: 'User deleted successfully.' });
     } catch (err) {
         console.error('Error deleting user:', err);
@@ -224,18 +201,13 @@ const deleteUser = async (req, res) => {
 // Delete all users
 const deleteAllUsers = async (req, res) => {
     try {
-        const deletedCount = await User.destroy({ where: {}, truncate: true }); // or `force: true` if paranoid mode is enabled
-
-        sendResponse(res, 200, {
-            message: 'All users deleted successfully.',
-            deletedCount,
-        });
+        await User.deleteMany({});
+        sendResponse(res, 200, { message: 'All users deleted successfully.' });
     } catch (err) {
         console.error('Error deleting all users:', err);
         sendError(res, 500, 'An error occurred while deleting all users.');
     }
 };
-
 
 // Create a new role
 const createRole = async (req, res) => {
@@ -253,7 +225,10 @@ const createRole = async (req, res) => {
 const assignRole = async (req, res) => {
     try {
         const { userId, roleId } = req.body;
-        await User_Role.create({ user_id: userId, role_id: roleId });
+        await User_Role.create({ 
+            user_id: userId, 
+            role_id: roleId 
+        });
         sendResponse(res, 201, { message: 'Role assigned successfully.' });
     } catch (err) {
         console.error('Error assigning role:', err);
@@ -264,14 +239,13 @@ const assignRole = async (req, res) => {
 // Get all roles
 const getAllRoles = async (req, res) => {
     try {
-        const roles = await Role.findAll();
+        const roles = await Role.find();
         sendResponse(res, 200, roles);
     } catch (err) {
         console.error('Error fetching roles:', err);
         sendError(res, 500, 'An error occurred while fetching roles.');
     }
 };
-
 // Generate new token
 const token = async (req, res) => {
     try {

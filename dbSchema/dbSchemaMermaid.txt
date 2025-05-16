@@ -1,0 +1,28 @@
+erDiagram
+    devices {
+        INT device_id PK
+        VARCHAR device_name
+    }
+
+    time {
+        INT time_id PK
+        DATETIME full_timestamp
+        INT year
+        INT month
+        INT day
+        INT hour
+        INT minute
+        INT second
+    }
+
+    iot_flows {
+        INT id PK
+        FLOAT packet_size_avg
+        INT packet_size_sum
+        DATETIME timestamp
+        INT device_id FK
+        INT time_id FK
+    }
+
+    iot_flows ||--|{ devices : "belongs to"
+    iot_flows ||--|{ time : "recorded at"

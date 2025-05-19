@@ -5,7 +5,7 @@ const { Sequelize } = require('sequelize');
 // Initialize the Kafka client
 const kafka = new Kafka({
     clientId: 'user-service',
-    brokers: ['localhost:9092'],  // Use the appropriate broker address for your setup
+    brokers: ['kafka:9092'],  // Use the appropriate broker address for your setup
 });
 
 // Create a consumer instance

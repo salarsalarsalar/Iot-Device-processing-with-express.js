@@ -1,0 +1,27 @@
+# Node dependencies (you install them inside the container)
+node_modules
+npm-debug.log
+yarn-error.log
+
+# Logs and temp files
+*.log
+*.tmp
+
+# Runtime files
+dist
+coverage
+.env
+.env.local
+.env.*.local
+
+# Git stuff
+.git
+.gitignore
+
+# Docker junk
+Dockerfile*
+.dockerignore
+
+# OS-specific files
+.DS_Store
+Thumbs.db

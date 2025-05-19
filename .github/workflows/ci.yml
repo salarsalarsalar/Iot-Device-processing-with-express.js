@@ -30,19 +30,19 @@ jobs:
 
     # Install dependencies for Node.js services
     - name: Install API Gateway dependencies
-      working-directory: ../api-gateway
+      working-directory: ./api-gateway
       run: |
         npm ci
         npm run test
     
     - name: Install User Service dependencies
-      working-directory: ../user-service
+      working-directory: ./user-service
       run: |
         npm ci
         npm run test
 
     - name: Install IoT Service dependencies
-      working-directory: ../iot-service
+      working-directory: ./iot-service
       run: |
         npm ci
         npm run test

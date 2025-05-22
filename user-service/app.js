@@ -32,7 +32,7 @@ dotenv.config(); // Load .env variables
 const sharedEnv = dotenv.config({ path: '../.env' });
 dotenvExpand.expand(sharedEnv); // Expand the shared .env variables
 
-const PORT = process.env.USER_SERVICE_PORT;
+const PORT = process.env.USER_SERVICE_PORT || 3002; // Port for the User service
 // Middleware Functions
 app.use(bodyParser.json()); // Parse incoming JSON requests
 app.use(cors()); // allows cross origin resource sharing

@@ -31,7 +31,7 @@ dotenv.config(); // Load .env variables
 const sharedEnv = dotenv.config({ path: '../.env' });
 dotenvExpand.expand(sharedEnv); // Expand the shared .env variables
 
-const PORT = process.env.IOT_SERVICE_PORT;
+const PORT = process.env.IOT_SERVICE_PORT || 3001; // Port for the IoT service
 
 // Middleware Functions
 app.use(bodyParser.json()); // Parse incoming JSON requests

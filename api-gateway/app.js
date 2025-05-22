@@ -26,7 +26,7 @@ dotenvExpand.expand(serviceEnv); // Expand service-specific variables
 console.log('USER_SERVICE_URL:', process.env.USER_SERVICE_URL);
 console.log('IOT_SERVICE_URL:', process.env.IOT_SERVICE_URL);
 
-const GATEWAY_PORT = process.env.GATEWAY_PORT;
+const API_GATEWAY_PORT = process.env.API_GATEWAY_PORT || 3000;
 
 // Middleware
 app.use(cors()); // Allows cross-origin resource sharing
@@ -45,12 +45,12 @@ if (process.env.NODE_ENV === 'production') {
     cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
   };
 
-  https.createServer(sslOptions, app).listen(PORT, () => {
-    console.log(`Secure server running on https://localhost:${PORT}`);
+  https.createServer(sslOptions, app).listen(API_GATEWAY_PORT, () => {
+    console.log(`Secure server running on https://localhost:${API_GATEWAY_PORT}`);
   });
 } else {
   // For development & test (like GitHub Actions)
-  http.createServer(app).listen(GATEWAY_PORT, () => {
-    console.log(`Server running on http://localhost:${GATEWAY_PORT}`);
+  http.createServer(app).listen(API_GATEWAY_PORT, () => {
+    console.log(`Server running on http://localhost:${API_GATEWAY_PORT}`);
   });
 }

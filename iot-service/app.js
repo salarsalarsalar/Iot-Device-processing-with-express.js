@@ -62,31 +62,34 @@ app.use(notFound);
 // Error handling (MUST BE AT THE END)
 app.use(errorHandler); // you will run into errors if you don't put it at the end
 
+module.exports = app; // Export the app for testing
+
 let server;
 
 if (ENV === 'production') {
-  // Use HTTPS with real certs
   const sslOptions = {
     key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
     cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
   };
   server = https.createServer(sslOptions, app);
   console.log('Using HTTPS server with SSL certs');
-} else {
-  // Use HTTP for local dev and CI
+} else if (ENV !== 'test') {
   server = http.createServer(app);
   console.log('Using HTTP server (no SSL)');
 }
 
-// WebSocket server
-const wss = new WebSocket.Server({ server });
-setupWebSocket(wss);
+// Only start WebSocket and server if not in test mode
+if (ENV !== 'test') {
+  // WebSocket server
+  const wss = new WebSocket.Server({ server });
+  setupWebSocket(wss);
 
-// Start server
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`${ENV.toUpperCase()} Server running on http${ENV === 'production' ? 's' : ''}://localhost:${PORT}`);
-  CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
-});
+  // Start HTTP/HTTPS server
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`${ENV.toUpperCase()} Server running on http${ENV === 'production' ? 's' : ''}://localhost:${PORT}`);
+    CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
+  });
+}
 
 
 // // Clustering logic

@@ -36,6 +36,8 @@ app.use('/', gatewayRoutes);
 
 app.use(notFound);
 
+module.exports = app;
+// Start the server
 if (process.env.NODE_ENV === 'production') {
   const sslOptions = {
     key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
@@ -45,7 +47,7 @@ if (process.env.NODE_ENV === 'production') {
   https.createServer(sslOptions, app).listen(API_GATEWAY_PORT, () => {
     console.log(`Secure server running on https://localhost:${API_GATEWAY_PORT}`);
   });
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
   // For development & test (like GitHub Actions)
   http.createServer(app).listen(API_GATEWAY_PORT, () => {
     console.log(`Server running on http://localhost:${API_GATEWAY_PORT}`);

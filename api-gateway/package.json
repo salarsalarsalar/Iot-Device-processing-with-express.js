@@ -6,7 +6,7 @@
   "scripts": {
     "start": "nodemon app.js",
     "dev": "node --watch --env-file=.env app.js",
-    "test": "jest --coverage"
+    "test": "NODE_ENV=test jest --coverage --detectOpenHandles"
   },
   "keywords": [],
   "author": "",

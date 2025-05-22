@@ -70,7 +70,7 @@ if (process.env.NODE_ENV === 'production') {
   https.createServer(sslOptions, app).listen(PORT, () => {
     console.log(`Secure server running on https://localhost:${PORT}`);
   });
-} else {
+} else if (process.env.NODE_ENV !== 'test') {
   // For development & test (like GitHub Actions)
   http.createServer(app).listen(PORT, () => {
     console.log(`Server running on http://localhost:${PORT}`);

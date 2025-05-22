@@ -1,4 +1,4 @@
-const { redisClient } = require('./redisClient');
+const redisClient  = require('../config/redis');
 
 const DEFAULT_EXPIRATION = 3600; // 1 hour
 

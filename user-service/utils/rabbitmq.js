@@ -3,7 +3,7 @@ const amqp = require('amqplib');
 let channel;
 
 async function connect() {
-  const conn = await amqp.connect('amqp://localhost');
+  const conn = await amqp.connect('amqp://rabbitmq');
   channel = await conn.createChannel();
   await channel.assertExchange('service-exchange', 'topic', { durable: false });
   return channel;

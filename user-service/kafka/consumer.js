@@ -1,4 +1,4 @@
-// kafkaConsumer.js
+// kafka/consumer.js
 const { Kafka } = require('kafkajs');
 const { User, Role, User_Role } = require('../models');
 const { Sequelize } = require('sequelize');

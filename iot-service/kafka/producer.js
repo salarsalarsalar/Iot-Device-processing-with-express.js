@@ -2,7 +2,7 @@ const { Kafka, Partitioners } = require('kafkajs');
 
 const kafka = new Kafka({
   clientId: 'iot-producer',
-  brokers: ['kafka:9092']
+  brokers: ['localhost:9092']
 });
 
 const producer = kafka.producer({

@@ -26,7 +26,6 @@ console.log('USER_SERVICE_URL:', process.env.USER_SERVICE_URL);
 console.log('IOT_SERVICE_URL:', process.env.IOT_SERVICE_URL);
 
 const GATEWAY_PORT = process.env.GATEWAY_PORT;
-const GATEWAY_URL = process.env.API_GATEWAY_URL;
 
 // Middleware
 app.use(cors()); // Allows cross-origin resource sharing
@@ -47,6 +46,6 @@ const sslOptions = {
 
 // Start HTTPS server
 https.createServer(sslOptions, app).listen(GATEWAY_PORT, () => {
-  console.log(`HTTPS API Gateway running at ${GATEWAY_URL}`);
+  console.log(`HTTPS API Gateway container is running at https://localhost:${GATEWAY_PORT}`);
   cronLogger('api-gateway');
 });

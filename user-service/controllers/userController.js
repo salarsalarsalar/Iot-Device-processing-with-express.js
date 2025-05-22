@@ -7,7 +7,9 @@ const { Sequelize } = require('sequelize');
 const bcrypt = require('bcrypt');
 const {producer} = require('../kafka/producer');
 const {publishUserCreated} = require('../utils/publisher');
-// Welcome message
+
+// @route: /api/user/home
+// @desc: Welcome message
 const welcome = (req, res) => {
     res.status(200).json({
         success: true,

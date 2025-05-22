@@ -9,22 +9,30 @@ dotenv.config(); // Load .env variables
 const sharedEnv = dotenv.config({ path: '../.env' });
 dotenvExpand.expand(sharedEnv); // Expand shared variables
 
-// Proxy requests to Flask service's /process endpoint
-router.use('/api/process', createProxyMiddleware({
-  target: 'https://127.0.0.1:3003',  // Flask app URL (where the Flask app is running)
-  changeOrigin: true,
-  secure: false, // Allows HTTPS with self-signed certs
-  pathRewrite: {
-    '^/api/process': '/process',  // Rewrite '/api/process' to '/process' for Flask
-  },
-  onProxyReq: (proxyReq, req) => {
-    proxyReq.setHeader('X-Gateway', 'api-gateway');
-  },
-}));
+// // Proxy requests to Flask service's /process endpoint
+// router.use('/api/process', createProxyMiddleware({
+//   target: 'https://127.0.0.1:3003',  // Flask app URL (where the Flask app is running)
+//   changeOrigin: true,
+//   secure: false, // Allows HTTPS with self-signed certs
+//   pathRewrite: {
+//     '^/api/process': '/process',  // Rewrite '/api/process' to '/process' for Flask
+//   },
+//   onProxyReq: (proxyReq, req) => {
+//     proxyReq.setHeader('X-Gateway', 'api-gateway');
+//   },
+// }));
 
-
+router.get('/api/welcome', (req, res) => {
+  res.status(200).json({
+    message: 'Welcome to the API Gateway',
+    services: [
+      { name: 'User Service', url: `https://localhost:${process.env.USER_SERVICE_PORT}` },
+      { name: 'IoT Service', url: `https://localhost:${process.env.IOT_SERVICE_PORT}` }
+    ]
+  });
+});
 router.use('/api/user', rateLimiter, createProxyMiddleware({
-  target: process.env.USER_SERVICE_URL,
+  target: `https://user-service:${process.env.USER_SERVICE_PORT}`, // User service URL
   changeOrigin: true,
   secure: false, // Allows HTTPS with self-signed certs
   pathRewrite: { '^/api/user': '' },
@@ -34,7 +42,7 @@ router.use('/api/user', rateLimiter, createProxyMiddleware({
 }));
 
 router.use('/api/iot', createProxyMiddleware({
-  target: process.env.IOT_SERVICE_URL,
+  target: `https://iot-service:${process.env.IOT_SERVICE_PORT}`, // IoT service URL
   changeOrigin: true,
   secure: false, // Allows HTTPS with self-signed certs
   ws: true, // WebSocket support

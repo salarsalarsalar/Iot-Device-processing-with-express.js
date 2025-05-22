@@ -9,6 +9,8 @@ module.exports = (req, res, next) => {
     } else if (originalUrl.startsWith('/api/user')) {
       console.log(`[Gateway] --> Routing to User Service for: ${originalUrl}`);
       req.targetService = 'user-service';
+    } else if (originalUrl.startsWith('/api/welcome')) {
+      console.log(`[Gateway] --> welcome message by gateway for: ${originalUrl}`);
     } else {
       console.log(`[Gateway] --> Unknown service for: ${originalUrl}`);
       req.targetService = 'unknown';

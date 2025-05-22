@@ -7,7 +7,7 @@ dotenv.config();
 
 const connectDB = async () => {
     try {
-        await mongoose.connect('mongodb://localhost:27017/user_db', {            
+        await mongoose.connect('mongodb://mongo:27017/user_db', {            
             maxPoolSize: 5,
             minPoolSize: 0,
             connectTimeoutMS: 30000,

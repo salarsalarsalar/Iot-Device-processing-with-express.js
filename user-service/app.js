@@ -32,7 +32,6 @@ const sharedEnv = dotenv.config({ path: '../.env' });
 dotenvExpand.expand(sharedEnv); // Expand the shared .env variables
 
 const PORT = process.env.USER_SERVICE_PORT;
-const USER_URL = process.env.USER_SERVICE_URL;
 // Middleware Functions
 app.use(bodyParser.json()); // Parse incoming JSON requests
 app.use(cors()); // allows cross origin resource sharing
@@ -67,8 +66,8 @@ const sslOptions = {
   cert: fs.readFileSync('./cert/server.cert')
 };
 
-https.createServer(sslOptions, app).listen(PORT, () => {
-  console.log(`HTTPS Server running on ${USER_URL}`);
+https.createServer(sslOptions, app).listen(PORT, '0.0.0.0', () => {
+    console.log(`HTTPS Server running on https://localhost${PORT}`);
   // console.log(`HTTPS Server running on https://localhost:${PORT}`);
 });
 // // Clustering logic

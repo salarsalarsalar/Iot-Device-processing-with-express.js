@@ -1,7 +1,7 @@
 const Redis = require('ioredis');
 
 const redisClient = new Redis({
-    host: 'host.docker.internal',
+    host: 'redis',
     port: 6379,
     retryStrategy: (times) => {
         const delay = Math.min(times * 50, 2000);

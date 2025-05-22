@@ -11,7 +11,6 @@ const dotenv = require('dotenv');
 // imports of files with project
 const iotModel = require('../models/iotModel');
 const {ReadCSV} = require('../utils/controllerHelper');
-const {redisClient} = require('../utils/redisClient');
 const {Time, Device, DeviceData, IoT_Flow} = require('../models');
 const {getOrSetCache} = require('../utils/cache')
 const {promisifyModel} = require('../utils/dbHelper')
@@ -20,7 +19,7 @@ const { sendResponse, sendError } = require('../utils/responseHelper');
 const { broadcastNewIoTData } = require('../webSocket/publisher');
 
 
-// @route: /api/iot/
+// @route: /api/iot/home
 // @desc: Welcome message
 exports.welcome = (req, res) => {
     sendResponse(res, 200, { message: 'Welcome to IoT Service' });

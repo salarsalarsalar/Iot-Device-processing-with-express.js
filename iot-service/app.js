@@ -31,7 +31,7 @@ const sharedEnv = dotenv.config({ path: '../.env' });
 dotenvExpand.expand(sharedEnv); // Expand the shared .env variables
 
 const PORT = process.env.IOT_SERVICE_PORT;
-const IOT_URL = process.env.IOT_SERVICE_URL;
+
 // Middleware Functions
 app.use(bodyParser.json()); // Parse incoming JSON requests
 app.use(cors()); // allows cross origin resource sharing
@@ -81,9 +81,10 @@ const server = https.createServer(sslOptions, app);
 const wss = new WebSocket.Server({ server });
 setupWebSocket(wss); // Setup WebSocket connection
 
+
 // Start the HTTPS server
-server.listen(PORT, () => {
-  console.log(`HTTPS Server running on ${IOT_URL}`);
+server.listen(PORT, '0.0.0.0',() => {
+  console.log(`HTTPS Server running on https://localhost${PORT}`);
   CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
 });
 

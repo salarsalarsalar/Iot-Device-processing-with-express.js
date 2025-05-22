@@ -5,7 +5,7 @@ const sharedEnv = dotenv.config({ path: '../.env' });
 const dotenvExpand = require('dotenv-expand');
 // Create Redis client
 const redisClient = redis.createClient({
-  url: process.env.REDIS_URL || 'redis://localhost:6379'
+  url: 'redis://redis:6379'
 });
 
 // Connect to Redis

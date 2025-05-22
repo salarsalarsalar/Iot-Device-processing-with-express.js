@@ -1,53 +1,75 @@
 services:
   api-gateway:
-    container_name: api-gateway
     build:
       context: ./api-gateway
-      dockerfile: dockerfile
+      dockerfile: gateway.dockerfile
+    container_name: api-gateway
     ports:
       - "${API_GATEWAY_PORT}:${API_GATEWAY_PORT}"
     volumes:
-    - ./api-gateway:/app
-    - /app/node_modules  # prevent node_modules overwrite
-    networks:
-      - backend
+      - ./api-gateway:/app
+      - /app/node_modules
     depends_on:
       - user-service
       - iot-service
-      # - dataprocessing-service
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      KAFKA_BROKER: kafka:${KAFKA_PORT}
+    networks:
+      - backend
 
   iot-service:
-    container_name: iot-service
     build:
       context: ./iot-service
-      dockerfile: dockerfile
+      dockerfile: iot.dockerfile
+    container_name: iot-service
     ports:
       - "${IOT_SERVICE_PORT}:${IOT_SERVICE_PORT}"
     volumes:
-    - ./iot-service:/app
-    - /app/node_modules  # prevent node_modules overwrite
+      - ./iot-service:/app
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      KAFKA_BROKER: kafka:${KAFKA_PORT}
     networks:
       - backend
 
   user-service:
-    container_name: user-service
     build:
       context: ./user-service
-      dockerfile: dockerfile
+      dockerfile: user.dockerfile
+    container_name: user-service
     ports:
       - "${USER_SERVICE_PORT}:${USER_SERVICE_PORT}"
     volumes:
-    - ./user-service:/app
-    - /app/node_modules  # prevent node_modules overwrite
+      - ./user-service:/app
+      - /app/node_modules
+    depends_on:
+      redis:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+    environment:
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      KAFKA_BROKER: kafka:${KAFKA_PORT}
     networks:
       - backend
-
-  # dataprocessing-service:
-  #   container_name: dataprocessing-service
-  #   ports:
-  #     - "${DATA_SERVICE_PORT}:${DATA_SERVICE_PORT}"
-  #   networks:
-  #     - backend
 
   nginx:
     image: nginx:latest
@@ -56,22 +78,40 @@ services:
       - "${NGINX_PORT}:80"
     volumes:
       - ./nginx-config/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx-config/cert:/etc/nginx/cert
     depends_on:
       - api-gateway
+    networks:
+      - backend
 
   redis:
     image: redis:latest
-    container_name: redis-server
+    container_name: redis
+    # command: ["redis-server", "--bind", "0.0.0.0"]
     ports:
-      - "${REDIS_PORT}:${REDIS_PORT}"
+      - "${REDIS_PORT}:6379"
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
-  database:
+  mongo:
     image: mongo
-    container_name: database
+    container_name: mongo
     ports:
-      - "${MONGO_PORT}:${MONGO_PORT}"
+      - "${MONGO_PORT}:27017"
     volumes:
       - dbdata:/data/db
+    networks:
+      - backend
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   kafka:
     image: confluentinc/cp-kafka:7.5.1
@@ -79,41 +119,66 @@ services:
     ports:
       - "${KAFKA_PORT}:${KAFKA_PORT}"
     environment:
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://localhost:${KAFKA_PORT},DOCKER://kafka:29092
-      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:${KAFKA_PORT},DOCKER://0.0.0.0:29092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,DOCKER:PLAINTEXT
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
-      KAFKA_INTER_BROKER_LISTENER_NAME: DOCKER
       KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_ZOOKEEPER_SESSION_TIMEOUT_MS: 60000
+    depends_on:
+      zookeeper:
+        condition: service_healthy
     networks:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "echo > /dev/tcp/localhost/9092"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
 
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.1
     container_name: zookeeper
     ports:
-      - "${ZOOKEEPER_PORT}:${ZOOKEEPER_PORT}"
+      - "${ZOOKEEPER_PORT}:2181"
     environment:
-      ZOOKEEPER_CLIENT_PORT: ZOOKEEPER_PORT
-      ZOOKEEPER_TICK_TIME: ${ZOOKEEPER_TICK_TIME}
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_MAX_SESSION_TIMEOUT: 60000
     networks:
-     - backend
-  
+      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "echo ruok | nc localhost 2181"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   rabbitmq:
     container_name: rabbitmq
     image: rabbitmq:3-management
     ports:
-      - "${AMQP_PORT}:${AMQP_PORT}"   # AMQP protocol port for your apps to connect
-      - "${AMQP_UI_PORT}:${AMQP_UI_PORT}" # Management UI web interface
+      - "${AMQP_PORT}:5672"
+      - "${AMQP_UI_PORT}:15672"
     environment:
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
     networks:
       - backend
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "status"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+
 
 volumes:
   dbdata:
+  rabbitmq_data:
+
 
 networks:
   backend:

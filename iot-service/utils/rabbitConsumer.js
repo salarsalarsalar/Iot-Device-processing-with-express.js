@@ -1,17 +1,17 @@
 const amqp = require('amqplib');
 
 const startConsumer = async () => {
-  const connection = await amqp.connect('amqp://localhost');
+  const connection = await amqp.connect('amqp://rabbitmq');
   const channel = await connection.createChannel();
 
-  const exchange = 'service-exchange'; // ✅ match publisher
+  const exchange = 'service-exchange'; //  match publisher
   const queue = 'iotQueue';            // you can name it anything
-  const routingKey = 'user.created';   // ✅ match publisher
+  const routingKey = 'user.created';   //  match publisher
 
   await channel.assertExchange(exchange, 'topic', { durable: false  });
 
   const q = await channel.assertQueue(queue, { durable: true });
-  await channel.bindQueue(q.queue, exchange, routingKey); // 🔗 bind queue to exchange
+  await channel.bindQueue(q.queue, exchange, routingKey); // bind queue to exchange
 
   console.log('[x] Waiting for messages with routing key "user.created"...');
 

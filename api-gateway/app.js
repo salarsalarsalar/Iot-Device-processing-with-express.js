@@ -22,9 +22,6 @@ dotenvExpand.expand(sharedEnv); // Expand shared variables
 const serviceEnv = dotenv.config();
 dotenvExpand.expand(serviceEnv); // Expand service-specific variables
 
-// Debugging to ensure variables are loaded
-console.log('USER_SERVICE_URL:', process.env.USER_SERVICE_URL);
-console.log('IOT_SERVICE_URL:', process.env.IOT_SERVICE_URL);
 
 const API_GATEWAY_PORT = process.env.API_GATEWAY_PORT || 3000;
 

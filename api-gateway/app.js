@@ -38,14 +38,18 @@ app.use('/', gatewayRoutes);
 
 app.use(notFound);
 
-// SSL options
-const sslOptions = {
-  key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
-  cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
-};
+if (process.env.NODE_ENV === 'production') {
+  const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
+  };
 
-// Start HTTPS server
-https.createServer(sslOptions, app).listen(GATEWAY_PORT, () => {
-  console.log(`HTTPS API Gateway container is running at https://localhost:${GATEWAY_PORT}`);
-  cronLogger('api-gateway');
-});
+  https.createServer(sslOptions, app).listen(PORT, () => {
+    console.log(`Secure server running on https://localhost:${PORT}`);
+  });
+} else {
+  // For development & test (like GitHub Actions)
+  http.createServer(app).listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}

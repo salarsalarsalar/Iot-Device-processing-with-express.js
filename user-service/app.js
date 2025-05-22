@@ -60,16 +60,21 @@ app.use(notFound);
 // Error handling (MUST BE AT THE END)
 app.use(errorHandler); // you will run into errors if you don't put it at the end
 
-// SSL Setup
-const sslOptions = {
-  key: fs.readFileSync('./cert/server.key'),
-  cert: fs.readFileSync('./cert/server.cert')
-};
+if (process.env.NODE_ENV === 'production') {
+  const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
+  };
 
-https.createServer(sslOptions, app).listen(PORT, '0.0.0.0', () => {
-    console.log(`HTTPS Server running on https://localhost${PORT}`);
-  // console.log(`HTTPS Server running on https://localhost:${PORT}`);
-});
+  https.createServer(sslOptions, app).listen(PORT, () => {
+    console.log(`Secure server running on https://localhost:${PORT}`);
+  });
+} else {
+  // For development & test (like GitHub Actions)
+  http.createServer(app).listen(PORT, () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
+}
 // // Clustering logic
 // const numCPUs = os.cpus().length; // Number of CPU cores
 

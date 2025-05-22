@@ -15,6 +15,9 @@ jobs:
   test-and-build:
     runs-on: ubuntu-latest
 
+    env:
+      NODE_ENV: test
+
     steps:
     - name: Checkout Code
       uses: actions/checkout@v3

@@ -1,5 +1,8 @@
 node_modules/
 .env
+.env.*
+!.env.project
+!.env.vault
 cert/
 server.cert
 server.key

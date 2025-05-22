@@ -61,30 +61,29 @@ app.use(notFound);
 // Error handling (MUST BE AT THE END)
 app.use(errorHandler); // you will run into errors if you don't put it at the end
 
-// SSL Setup
-const sslOptions = {
-  key: fs.readFileSync('./cert/server.key'),
-  cert: fs.readFileSync('./cert/server.cert')
-};
+let server;
 
-// Create HTTPS server
-const server = https.createServer(sslOptions, app);
-
-// // Attach WebSocket upgrade support to the same server
-// server.on('upgrade', (req, socket, head) => {
-//   console.log(' Upgrade request received for:', req.url);
-//   // This allows http-proxy-middleware to handle upgrades
-//   gatewayRoutes.handleUpgrade(req, socket, head);
-// });
+if (ENV === 'production') {
+  // Use HTTPS with real certs
+  const sslOptions = {
+    key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
+    cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
+  };
+  server = https.createServer(sslOptions, app);
+  console.log('Using HTTPS server with SSL certs');
+} else {
+  // Use HTTP for local dev and CI
+  server = http.createServer(app);
+  console.log('Using HTTP server (no SSL)');
+}
 
 // WebSocket server
 const wss = new WebSocket.Server({ server });
-setupWebSocket(wss); // Setup WebSocket connection
+setupWebSocket(wss);
 
-
-// Start the HTTPS server
-server.listen(PORT, '0.0.0.0',() => {
-  console.log(`HTTPS Server running on https://localhost${PORT}`);
+// Start server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`${ENV.toUpperCase()} Server running on http${ENV === 'production' ? 's' : ''}://localhost:${PORT}`);
   CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
 });
 

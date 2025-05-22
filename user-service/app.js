@@ -2,6 +2,7 @@
 const fs = require('fs');
 const cors = require('cors');
 const https = require("https");
+const http = require('http');
 const redis = require('redis');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');

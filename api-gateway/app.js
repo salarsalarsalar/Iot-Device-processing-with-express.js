@@ -3,6 +3,7 @@ const dotenvExpand = require('dotenv-expand');
 const express = require('express');
 const fs = require('fs');
 const https = require('https');
+const http = require('http');
 const cors = require('cors');
 const path = require('path');
 const gatewayRoutes = require('./routes/gatewayRoutes');

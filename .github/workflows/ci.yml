@@ -80,7 +80,7 @@ jobs:
         docker ps
 
     - name: Run health check
-      run: curl --fail https://localhost:${{ secrets.API_GATEWAY_PORT }}/api/welcome
+      run: curl --fail http://localhost:${{ secrets.API_GATEWAY_PORT }}/api/welcome
 
     - name: Shut down containers
       run: docker-compose down

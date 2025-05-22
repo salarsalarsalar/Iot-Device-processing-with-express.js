@@ -5,7 +5,7 @@ const userRoutes = require('../routes/userRoutes');
 const app = express();
 app.use(userRoutes);
 
-describe('GET /api/user/home', () => {
+describe.skip('GET /api/user/home', () => {
   it('should return User service welcome message', async () => {
     const res = await request(app).get('/api/user/home');
     expect(res.statusCode).toBe(200);

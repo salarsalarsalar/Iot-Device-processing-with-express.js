@@ -1,0 +1,10 @@
+.env
+.env*
+cert/
+server.cert
+server.key
+localhost-key.pem
+localhost.pem
+.flaskenv*
+!.env.project
+!.env.vault

@@ -1,0 +1,21 @@
+const request = require('supertest');
+const app = require('../app');
+
+process.env.USER_SERVICE_PORT = 3001;
+process.env.IOT_SERVICE_PORT = 3002;
+
+const isHttps = process.env.NODE_ENV === 'production';
+const proto = isHttps ? 'https' : 'http';
+
+
+describe('GET /api/welcome', () => {
+  it('should return welcome message with service URLs', async () => {
+    const res = await request(app).get('/api/welcome');
+    expect(res.statusCode).toBe(200);
+    expect(res.body.message).toBe('Welcome to the API Gateway');
+    expect(res.body.services).toEqual([
+      { name: 'User Service', url: `${proto}://localhost:${process.env.USER_SERVICE_PORT}` },
+      { name: 'IoT Service', url: `${proto}://localhost:${process.env.IOT_SERVICE_PORT}` },
+    ]);
+  });
+});

@@ -50,7 +50,7 @@ if (process.env.NODE_ENV === 'production') {
   });
 } else {
   // For development & test (like GitHub Actions)
-  http.createServer(app).listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  http.createServer(app).listen(GATEWAY_PORT, () => {
+    console.log(`Server running on http://localhost:${GATEWAY_PORT}`);
   });
 }

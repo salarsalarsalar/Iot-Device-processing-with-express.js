@@ -14,8 +14,8 @@ describe('GET /api/welcome', () => {
     expect(res.statusCode).toBe(200);
     expect(res.body.message).toBe('Welcome to the API Gateway');
     expect(res.body.services).toEqual([
-      { name: 'IoT Service', url: `${proto}://localhost:${process.env.IOT_SERVICE_PORT}` },
       { name: 'User Service', url: `${proto}://localhost:${process.env.USER_SERVICE_PORT}` },
+      { name: 'IoT Service', url: `${proto}://localhost:${process.env.IOT_SERVICE_PORT}` },
     ]);
   });
 });

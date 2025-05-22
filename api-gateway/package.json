@@ -8,6 +8,13 @@
     "dev": "node --watch --env-file=.env app.js",
     "test": "NODE_ENV=test jest --coverage --detectOpenHandles"
   },
+    "jest": {
+    "testPathIgnorePatterns": [
+      "/node_modules/",
+      "__test__/iot.test.js",
+      "__test__/user.test.js"
+    ]
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",

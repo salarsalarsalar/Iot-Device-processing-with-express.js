@@ -13,6 +13,7 @@ const { exec } = require('child_process');
 const cluster = require('cluster');
 const os = require('os');
 const WebSocket = require('ws');
+const path = require('path');
 
 // imports of files of project
 const { logger } = require('./middleware/logger');
@@ -23,7 +24,7 @@ const errorHandler = require('./middleware/error');
 const { notFound } = require('./middleware/notFound');
 const setupWebSocket = require('./webSocket/webSocket'); 
 const { startConsumer } = require('./utils/rabbitConsumer'); 
-const connectDB = require('./config/database'); // MongoDB connection
+const {connectDB} = require('./config/database'); // MongoDB connection
 const app = express(); // initialising express.js
 
 // initialising environment variables
@@ -64,32 +65,24 @@ app.use(errorHandler); // you will run into errors if you don't put it at the en
 
 module.exports = app; // Export the app for testing
 
-let server;
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
+};
 
-if (ENV === 'production') {
-  const sslOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
-  };
-  server = https.createServer(sslOptions, app);
-  console.log('Using HTTPS server with SSL certs');
-} else if (ENV !== 'test') {
-  server = http.createServer(app);
-  console.log('Using HTTP server (no SSL)');
-}
+const server = https.createServer(sslOptions, app);
 
 // Only start WebSocket and server if not in test mode
-if (ENV !== 'test') {
-  // WebSocket server
-  const wss = new WebSocket.Server({ server });
-  setupWebSocket(wss);
 
-  // Start HTTP/HTTPS server
-  server.listen(PORT, '0.0.0.0', () => {
-    console.log(`${ENV.toUpperCase()} Server running on http${ENV === 'production' ? 's' : ''}://localhost:${PORT}`);
-    CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
-  });
-}
+// WebSocket server
+const wss = new WebSocket.Server({ server });
+setupWebSocket(wss);
+
+// Start HTTP/HTTPS server
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(` Server running on https://localhost:${PORT}`);
+  CronLogger('iot-service', '*/5 * * * *'); // Log every 5 minutes
+});
 
 
 // // Clustering logic

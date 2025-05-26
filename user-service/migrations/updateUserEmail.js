@@ -1,42 +1,43 @@
-const sequelize = require('../config/database');
+const { connectDB, getDB } = require('../config/database');
 
 async function updateUserEmail() {
     try {
-        // First, check if the email column exists
-        const [results] = await sequelize.query(`
-            SELECT COLUMN_NAME 
-            FROM INFORMATION_SCHEMA.COLUMNS 
-            WHERE TABLE_NAME = 'users' 
-            AND COLUMN_NAME = 'email'
-        `);
+        // Connect to MongoDB
+        await connectDB();
+        const db = getDB();
+        const usersCollection = db.collection('users');
 
-        if (results.length === 0) {
-            // If email column doesn't exist, add it
-            await sequelize.query(`
-                ALTER TABLE users 
-                ADD COLUMN email VARCHAR(255) NULL
-            `);
+        // Check if any user has email field
+        const hasEmailField = await usersCollection.findOne({ email: { $exists: true } });
+
+        if (!hasEmailField) {
+            // Add email field to all documents that don't have it
+            await usersCollection.updateMany(
+                { email: { $exists: false } },
+                { $set: { email: null } }
+            );
+            console.log('Added email field to existing documents');
         }
 
-        // Update empty email addresses with a temporary value
-        await sequelize.query(`
-            UPDATE users 
-            SET email = CONCAT(username, '@temp.com')
-            WHERE email IS NULL OR email = ''
-        `);
+        // Update documents with null or empty email
+        await usersCollection.updateMany(
+            { $or: [{ email: null }, { email: '' }] },
+            [
+                {
+                    $set: {
+                        email: { $concat: ["$username", "@temp.com"] }
+                    }
+                }
+            ]
+        );
 
-        // Then add the unique constraint
-        await sequelize.query(`
-            ALTER TABLE users 
-            MODIFY COLUMN email VARCHAR(255) NOT NULL UNIQUE
-        `);
+        // Create a unique index on email field
+        await usersCollection.createIndex({ email: 1 }, { unique: true });
 
-        console.log('Successfully updated user email addresses and added unique constraint');
+        console.log('Successfully updated user email addresses and added unique index');
     } catch (error) {
         console.error('Error updating user email addresses:', error);
-    } finally {
-        await sequelize.close();
     }
 }
 
-updateUserEmail(); 
+updateUserEmail();

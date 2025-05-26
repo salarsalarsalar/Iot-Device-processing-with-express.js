@@ -1,3 +1,5 @@
+// @file api-gateway/routes/gatewayRoutes.js
+// @description Reverse Proxy Routes for the API Gateway
 const express = require('express');
 const { createProxyMiddleware } = require('http-proxy-middleware');
 const rateLimiter = require('../middleware/rateLimiter');
@@ -14,19 +16,19 @@ dotenvExpand.expand(sharedEnv);
 // Determine protocol based on environment
 const isProduction = process.env.NODE_ENV === 'production';
 const protocol = isProduction ? 'https' : 'http';
-const USER_PORT = process.env.USER_SERVICE_PORT || 3001;
-const IOT_PORT = process.env.IOT_SERVICE_PORT || 3002;
-// Logging
-console.log(`[API-Gateway] Running in ${process.env.NODE_ENV || 'development'} mode`);
-console.log(`[API-Gateway] Proxying with protocol: ${protocol.toUpperCase()}`);
+const IOT_PORT = process.env.IOT_SERVICE_PORT || 3001;
+const USER_PORT = process.env.USER_SERVICE_PORT || 3002;
+// // Logging
+// console.log(`[API-Gateway] Running in ${process.env.NODE_ENV || 'development'} mode`);
+// console.log(`[API-Gateway] Proxying with protocol: ${protocol.toUpperCase()}`);
 
 // Welcome Route
 router.get('/api/welcome', (req, res) => {
   res.status(200).json({
     message: 'Welcome to the API Gateway',
     services: [
-      { name: 'User Service', url: `${protocol}://localhost:${USER_PORT}` },
-      { name: 'IoT Service', url: `${protocol}://localhost:${IOT_PORT}` }
+      { name: 'User Service', url: `https://localhost:${USER_PORT}` },
+      { name: 'IoT Service', url: `https://localhost:${IOT_PORT}` }
     ]
   });
 });
@@ -46,9 +48,9 @@ router.get('/api/welcome', (req, res) => {
 
 // Proxy to User Service
 router.use('/api/user', rateLimiter, createProxyMiddleware({
-  target: `${protocol}://user-service:${USER_PORT}`,
+  target: `https://user-service:${USER_PORT}`,
   changeOrigin: true,
-  secure: isProduction, // Only validate SSL in production
+  secure: false, 
   pathRewrite: { '^/api/user': '' },
   onProxyReq: (proxyReq, req) => {
     proxyReq.setHeader('X-Gateway', 'api-gateway');
@@ -57,9 +59,9 @@ router.use('/api/user', rateLimiter, createProxyMiddleware({
 
 // Proxy to IoT Service
 router.use('/api/iot', createProxyMiddleware({
-  target: `${protocol}://iot-service:${IOT_PORT}`,
+  target: `https://iot-service:${IOT_PORT}`,
   changeOrigin: true,
-  secure: isProduction,
+  secure: false,
   ws: true,
   pathRewrite: { '^/api/iot': '' },
   onProxyReq: (proxyReq, req) => {

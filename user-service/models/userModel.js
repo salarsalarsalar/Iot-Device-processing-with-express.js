@@ -1,55 +1,60 @@
-const { User, Role, User_Role } = require('./index');
-const { redisClient } = require('../utils/redisClient.js');
+const { getDB } = require('../config/database.js');
+const { ObjectId } = require('mongodb');
 
+exports.getAllUsers = async () => {
+    const db = getDB();
+    return db.collection('users').find().toArray();
+};
 
-exports.createUser = async (username, hashedPassword) => {
-    const user = await User.create({
-        username,
-        email: username,
-        password: hashedPassword
-    });
-    return user;
+exports.createUser = async (username, email, hashedPassword) => {
+    const db = getDB();
+    return db.collection('users').insertOne({ username, email, password: hashedPassword });
+};
+
+exports.getUserById = async (userId) => {
+    const db = getDB();
+    return db.collection('users').findOne({ _id: new ObjectId(userId) });
+};
+
+exports.getUserByEmail = async (email) => {
+    const db = getDB();
+    return db.collection('users').findOne({ email });
 };
 
 exports.findByUsername = async (username) => {
-    console.log('Checking for username:', username);
-    const user = await User.findOne({ username });
-    console.log('Query result:', user);
-    return user;
+    const db = getDB();
+    return db.collection('users').findOne({ username });
 };
 
 exports.createRole = async (name, description) => {
-    const role = await Role.create({
-        name,
-        description
+    const db = getDB();
+    return db.collection('roles').insertOne({ name, description });
+};
+
+exports.getRoleById = async (roleId) => {
+    const db = getDB();
+    return db.collection('roles').findOne({ _id: new ObjectId(roleId) }); // typo was 'role' before
+};
+
+exports.assignRoleToUser = async (userId, roleId) => {
+    const db = getDB();
+    return db.collection('user_roles').insertOne({
+        user_id: new ObjectId(userId),
+        role_id: new ObjectId(roleId)
     });
-    return role._id;
 };
 
-exports.assignRoleToUser = async (user_id, role_id) => {
-    const userRole = await User_Role.create({
-        user_id,
-        role_id
-    });
-    return userRole;
+exports.getRolesForUser = async (userId) => {
+    const db = getDB();
+    return db.collection('user_roles').find({ user_id: new ObjectId(userId) }).toArray();
 };
 
-exports.getRolesForUser = async (user_id) => {
-    const userRoles = await User_Role.find({ user_id })
-        .populate('role_id');
-    return userRoles;
-};
-
-exports.getAllUsers = async () => {
-    const users = await User.find()
-        .populate({
-            path: 'roles',
-            select: 'name description'
-        });
-    return users;
+exports.deleteUser = async (userId) => {
+    const db = getDB();
+    return db.collection('users').deleteOne({ _id: new ObjectId(userId) });
 };
 
 exports.getAllRoles = async () => {
-    const roles = await Role.find();
-    return roles;
+    const db = getDB();
+    return db.collection('roles').find().toArray();
 };

@@ -1,12 +1,21 @@
-// @file: iotRoutes.js
-// @description: Routes for IoT device and data management
+// @file iot-service/routes/iotRoutes.js
+// @description Routes for IoT Service
 const express = require('express');
 const router = express.Router();
 const iotController = require('../controllers/iotController');
 const multer = require('multer');
 const path = require('path');
 
-// Welcome message
+// Configure multer storage
+const storage = multer.diskStorage({
+    destination: './uploads/',
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);
+    }
+});
+const upload = multer({ storage });
+
+// Welcome route
 router.get('/home', iotController.welcome);
 
 // Device Management Routes
@@ -17,28 +26,18 @@ router.put('/devices/:device_id', iotController.updateDevice);
 router.delete('/devices/:device_id', iotController.deleteDevice);
 
 // IoT Data Management Routes
+router.get('/data/recent', iotController.getRecentData); // Move before specific ID route
+router.get('/data/stats', iotController.getStats); // Add stats route
 router.get('/data', iotController.getAllData);
 router.get('/data/:id', iotController.getDataById);
 router.post('/data', iotController.insertData);
 router.put('/data/:id', iotController.updateData);
 router.delete('/data/:id', iotController.deleteData);
 
-// Recent Data and Statistics
-router.get('/data/recent', iotController.getRecentData);
-
-
-// Post Data through WebSocket
-router.post('/create',iotController.createData);
-
-// CSV Upload
-const storage = multer.diskStorage({
-    destination: './uploads/',
-    filename: (req, file, cb) => {
-        cb(null, file.originalname);
-    }
-});
-
-const upload = multer({ storage });
+// File Upload Route
 router.post('/upload', upload.single('file'), iotController.uploadCSV);
+
+// WebSocket Data Route
+router.post('/stream', iotController.createData);
 
 module.exports = router;

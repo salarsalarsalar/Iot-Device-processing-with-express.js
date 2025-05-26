@@ -2,7 +2,7 @@
 const fs = require('fs');
 const cors = require('cors');
 const https = require("https");
-const http = require('http');
+// const http = require('http');
 const redis = require('redis');
 const dotenv = require('dotenv');
 const dotenvExpand = require('dotenv-expand');
@@ -12,9 +12,10 @@ const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 const cluster = require('cluster');
 const os = require('os');
+const path = require('path');
 
 // imports of files of project
-const connectDB  = require('./config/database'); // MongoDB connection
+const {connectDB } = require('./config/database'); // MongoDB connection
 const { logger } = require('./middleware/logger');
 const { limiter } = require('./middleware/rateLimiter');
 const userRoutes = require('./routes/userRoutes');
@@ -61,21 +62,14 @@ app.use(notFound);
 // Error handling (MUST BE AT THE END)
 app.use(errorHandler); // you will run into errors if you don't put it at the end
 
-if (process.env.NODE_ENV === 'production') {
-  const sslOptions = {
-    key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
-    cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
-  };
+const sslOptions = {
+  key: fs.readFileSync(path.join(__dirname, 'cert', 'server.key')),
+  cert: fs.readFileSync(path.join(__dirname, 'cert', 'server.cert')),
+};
 
-  https.createServer(sslOptions, app).listen(PORT, () => {
-    console.log(`Secure server running on https://localhost:${PORT}`);
-  });
-} else if (process.env.NODE_ENV !== 'test') {
-  // For development & test (like GitHub Actions)
-  http.createServer(app).listen(PORT, () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
-}
+https.createServer(sslOptions, app).listen(PORT, () => {
+  console.log(`Secure server running on https://localhost:${PORT}`);
+});
 // // Clustering logic
 // const numCPUs = os.cpus().length; // Number of CPU cores
 

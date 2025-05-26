@@ -1,3 +1,5 @@
+// @file: userController.js
+// @description: Controller for handling user registration, login, and management
 const { hashPassword, comparePasswords } = require('../utils/bcryptHelper');
 const { generateToken, generateRefreshToken } = require('../utils/jwtHelper');
 const { getOrSetCache } = require('../utils/cacheHelper');
@@ -7,6 +9,7 @@ const { Sequelize } = require('sequelize');
 const bcrypt = require('bcrypt');
 const {producer} = require('../kafka/producer');
 const {publishUserCreated} = require('../utils/publisher');
+const userModel = require('../models/userModel');
 
 // @route: /api/user/home
 // @desc: Welcome message

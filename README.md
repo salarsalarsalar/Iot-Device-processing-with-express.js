@@ -122,6 +122,6 @@ npm start
 
 ### **10. Conclusion**
 
-This project serves as a backend solution for handling and analyzing IoT device data. It features a clean MVC structure, RESTful APIs, and support for CSV ingestion. The architecture ensures future scalability for real-time dashboards or ML integration.
+This project serves as a software solution for handling and analyzing IoT device data. It features a clean MVC structure, RESTful APIs, and support for CSV ingestion. The architecture ensures future scalability for real-time dashboards or ML integration.
 
 ---

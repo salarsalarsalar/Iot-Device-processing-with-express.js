@@ -42,16 +42,6 @@ This project is a backend-only API designed to monitor IoT device data such as p
 | Multer            | File uploads (CSV)  |
 | CSV-Parser        | Parsing CSV content |
 | Git & GitHub      | Version control     |
-| Obsidian          | Documentation       |
-
----
-
-### **4. System Architecture (MVC)**
-
-* **Model (`iotModel.js`)** – Handles all database operations.
-* **View** – Not applicable (backend-only).
-* **Controller (`iotController.js`)** – Logic for handling requests and responses.
-* **Router (`iotRoutes.js`)** – Defines all API endpoints.
 
 ---
 

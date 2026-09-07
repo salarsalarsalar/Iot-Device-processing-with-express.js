@@ -102,15 +102,7 @@ npm start
 
 ---
 
-### **9. Git & Branching Workflow**
-
-* **Main Branch** contains the original Express dashboard.
-* **`advanced_apis` Branch** contains the completely separate IoT API.
-* Pull Requests can be made from `Iot_project` to show collaborators and merge when ready.
-
----
-
-### **10. Conclusion**
+### **Conclusion**
 
 This project serves as a software solution for handling and analyzing IoT device data. It features a clean MVC structure, RESTful APIs, and support for CSV ingestion. The architecture ensures future scalability for real-time dashboards or ML integration.
 

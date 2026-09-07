@@ -7,13 +7,11 @@
 1. [Introduction](#1-introduction)
 2. [Project Objectives](#2-project-objectives)
 3. [Tech Stack](#3-tech-stack)
-4. [System Architecture](#4-system-architecture-mvc)
-5. [API Endpoints](#5-api-endpoints)
-6. [CSV Upload Feature](#6-csv-upload-feature)
-7. [Database Schema](#7-database-schema)
-8. [Project Setup](#8-project-setup)
-9. [Git & Branching Workflow](#9-git--branching-workflow)
-10. [Conclusion](#10-conclusion)
+4. [API Endpoints](#4-api-endpoints)
+5. [CSV Upload Feature](#5-csv-upload-feature)
+6. [Database Schema](#6-database-schema)
+7. [Project Setup](#7-project-setup)
+8. [Conclusion](#8-conclusion)
 
 ---
 
@@ -45,7 +43,7 @@ This project is a backend-only API designed to monitor IoT device data such as p
 
 ---
 
-### **5. API Endpoints**
+### **4. API Endpoints**
 
 | Method   | Route                         | Purpose                         |
 | -------- | ----------------------------- | ------------------------------- |
@@ -64,13 +62,13 @@ This project is a backend-only API designed to monitor IoT device data such as p
 
 ---
 
-### **6. CSV Upload Feature**
+### **5. CSV Upload Feature**
 
 CSV files containing `id`, `packet_size_avg`, `packet_size_sum`, and `timestamp` are parsed using `csv-parser`, validated, and then inserted into the `iot_flows` table using bulk SQL insert.
 
 ---
 
-### **7. Database Schema**
+### **6. Database Schema**
 
 **iot_flows Table**
 
@@ -83,7 +81,7 @@ CSV files containing `id`, `packet_size_avg`, `packet_size_sum`, and `timestamp`
 
 ---
 
-### **8. Project Setup**
+### **7. Project Setup**
 
 ```bash
 git clone https://github.com/salarsalarsalar/Iot-Device-processing-with-express.js.git
@@ -92,17 +90,13 @@ git checkout Iot_project
 npm install
 ```
 
-Create `.env` with DB credentials.
-Ensure MySQL server is running.
-Start server with:
-
 ```bash
 npm start
 ```
 
 ---
 
-### **Conclusion**
+### **8. Conclusion**
 
 This project serves as a software solution for handling and analyzing IoT device data. It features a clean MVC structure, RESTful APIs, and support for CSV ingestion. The architecture ensures future scalability for real-time dashboards or ML integration.
 
